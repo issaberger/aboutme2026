@@ -1,179 +1,220 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Globe, ShieldAlert, Cpu, Zap, ExternalLink, Activity, RefreshCw, Radio, Terminal } from 'lucide-react';
 import { useSystem } from '../../context/SystemContext';
-import { MOCK_INTEL } from '../../constants';
-import { Radio, ShieldAlert, Cpu, Globe, Zap, ExternalLink, Activity, Satellite, Lock, Hash } from 'lucide-react';
-import CyberButton from '../ui/CyberButton';
+
+// Types for Hacker News API
+interface HNStory {
+  id: number;
+  title: string;
+  url: string;
+  score: number;
+  by: string;
+  time: number;
+  descendants: number; // comment count
+}
+
+interface NewsItem extends HNStory {
+  category: string;
+  domain: string;
+}
+
+const CATEGORIES = [
+  { id: 'all', label: 'GLOBAL_FEED', icon: Globe, color: 'text-blue-400', border: 'border-blue-400' },
+  { id: 'ai', label: 'NEURAL_NET', icon: Cpu, color: 'text-purple-400', border: 'border-purple-400' },
+  { id: 'security', label: 'NET_SEC', icon: ShieldAlert, color: 'text-red-400', border: 'border-red-400' },
+  { id: 'hardware', label: 'HARDWARE', icon: Zap, color: 'text-yellow-400', border: 'border-yellow-400' },
+  { id: 'dev', label: 'DEV_OPS', icon: Terminal, color: 'text-green-400', border: 'border-green-400' },
+];
+
+// Keywords for auto-categorization
+const KEYWORDS: Record<string, string[]> = {
+  ai: ['ai', 'gpt', 'llm', 'neural', 'robot', 'learning', 'model', 'diffusion', 'openai', 'anthropic', 'nvidia'],
+  security: ['hack', 'security', 'vuln', 'breach', 'attack', 'malware', 'zero-day', 'exploit', 'privacy', 'nsa'],
+  hardware: ['chip', 'processor', 'intel', 'amd', 'arm', 'risc', 'pi', 'arduino', 'apple', 'mac', 'iphone'],
+  dev: ['react', 'js', 'typescript', 'rust', 'python', 'code', 'linux', 'git', 'web', 'css', 'api', 'database']
+};
 
 const MotionDiv = motion.div as any;
 
-const CATEGORIES = [
-  { id: 'all', label: 'WIDE_BAND', icon: Globe },
-  { id: 'security', label: 'NET_SEC', icon: ShieldAlert },
-  { id: 'hardware', label: 'CORE_GEAR', icon: Zap },
-  { id: 'ai', label: 'NEURAL', icon: Cpu },
-];
-
 const NewsModule = () => {
-  const { colors, proMode } = useSystem();
+  const { colors } = useSystem();
   const [activeCat, setActiveCat] = useState('all');
+  const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [visibleItems, setVisibleItems] = useState<typeof MOCK_INTEL>([]);
+  const [lastUpdated, setLastUpdated] = useState<string>('');
+
+  const fetchLiveIntel = async () => {
+    setLoading(true);
+    try {
+      // 1. Get Top Stories IDs
+      const topIdsRes = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json');
+      const topIds = await topIdsRes.json();
+
+      // 2. Fetch details for first 60 items
+      const storyPromises = topIds.slice(0, 60).map((id: number) => 
+        fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(res => res.json())
+      );
+      
+      const rawStories: HNStory[] = (await Promise.all(storyPromises)).filter(s => s && s.url && !s.dead && !s.deleted);
+
+      // 3. Process and Categorize
+      const processed: NewsItem[] = rawStories.map(story => {
+        const titleLower = story.title.toLowerCase();
+        let category = 'general';
+        
+        // Auto-tagging logic
+        for (const [cat, words] of Object.entries(KEYWORDS)) {
+          if (words.some(w => titleLower.includes(w))) {
+            category = cat;
+            break;
+          }
+        }
+        
+        // If uncategorized but high score, maybe 'dev' or 'culture' (using 'dev' for generic tech here for simplicity)
+        if (category === 'general') category = 'dev'; 
+
+        let domain = '';
+        try { domain = new URL(story.url).hostname.replace('www.', ''); } catch(e) {}
+
+        return { ...story, category, domain };
+      });
+
+      setNews(processed);
+      setLastUpdated(new Date().toLocaleTimeString());
+    } catch (err) {
+      console.error("Intel Fetch Error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    setLoading(true);
-    const timer = setTimeout(() => {
-      const filtered = activeCat === 'all' 
-        ? MOCK_INTEL 
-        : MOCK_INTEL.filter(item => item.category.toLowerCase() === activeCat);
-      setVisibleItems(filtered);
-      setLoading(false);
-    }, 1200);
-    return () => clearTimeout(timer);
-  }, [activeCat]);
+    fetchLiveIntel();
+    const interval = setInterval(fetchLiveIntel, 60000); // Auto refresh every 60s
+    return () => clearInterval(interval);
+  }, []);
+
+  const filteredNews = activeCat === 'all' 
+    ? news 
+    : news.filter(n => n.category === activeCat);
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-black font-sans relative">
-      {/* Dynamic Data Ticker */}
-      <div className="bg-primary/5 border-b border-primary/20 py-2 overflow-hidden flex items-center whitespace-nowrap z-20">
-        <div className="px-5 text-[10px] font-mono text-primary flex items-center gap-2 border-r border-primary/20 shrink-0 bg-black">
-          <Activity size={12} className="animate-pulse" /> UPLINK_ACTIVE
+    <div className="h-full flex flex-col overflow-hidden bg-[#030303] font-sans relative">
+      {/* Live Header */}
+      <div className="bg-primary/10 border-b border-primary/30 py-2 px-4 flex justify-between items-center z-20 backdrop-blur-md">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Activity size={16} className="text-primary animate-pulse" />
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-ping" />
+          </div>
+          <span className="text-xs font-black tracking-widest text-primary">LIVE_INTEL_FEED // HN_UPLINK</span>
         </div>
-        <MotionDiv 
-          animate={{ x: [0, -1000] }}
-          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-          className="flex gap-16 px-6"
-        >
-          {MOCK_INTEL.map((n, i) => (
-            <span key={i} className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em]">
-               SOURCE_{n.source.toUpperCase()} // PACKET_{n.id}092 // STATUS_{n.priority}
-            </span>
-          ))}
-        </MotionDiv>
+        <div className="flex items-center gap-4 text-[10px] font-mono text-gray-400">
+           <span>UPDATED: {lastUpdated}</span>
+           <button 
+             onClick={fetchLiveIntel}
+             className="hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
+             disabled={loading}
+           >
+             <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+           </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-hidden flex flex-col md:flex-row relative">
-        {/* Background Decorative Layer */}
-        <div className="absolute inset-0 opacity-10 pointer-events-none overflow-hidden">
-           <div className="absolute inset-0 bg-[linear-gradient(transparent_0%,rgba(var(--color-primary-rgb),0.2)_50%,transparent_100%)] bg-[size:100%_4px] animate-[scanlines_2s_linear_infinite]" />
-           <div className="grid grid-cols-12 gap-1 h-full w-full opacity-20">
-              {Array.from({length: 12}).map((_, i) => (
-                <div key={i} className="border-r border-primary/20 h-full" />
-              ))}
-           </div>
+        {/* Sidebar Categories */}
+        <div className="w-full md:w-64 bg-black/40 border-b md:border-b-0 md:border-r border-gray-800 p-2 flex md:flex-col gap-1 overflow-x-auto md:overflow-visible shrink-0 z-10">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCat(cat.id)}
+              className={`flex items-center gap-3 px-4 py-3 rounded text-[10px] md:text-xs font-bold uppercase transition-all border whitespace-nowrap md:whitespace-normal group relative overflow-hidden ${
+                activeCat === cat.id 
+                  ? `bg-white/5 border-${cat.color.split('-')[1]}-500/50 text-white shadow-[0_0_15px_rgba(255,255,255,0.1)]`
+                  : 'bg-transparent border-transparent text-gray-500 hover:text-gray-200 hover:bg-white/5'
+              }`}
+            >
+              {activeCat === cat.id && (
+                 <MotionDiv layoutId="activeGlow" className={`absolute inset-0 bg-${cat.color.split('-')[1]}-500/10`} />
+              )}
+              <cat.icon size={16} className={`${activeCat === cat.id ? cat.color : 'text-gray-600 group-hover:text-gray-400'} relative z-10`} />
+              <span className="relative z-10">{cat.label}</span>
+              {activeCat === cat.id && <div className={`ml-auto w-1.5 h-1.5 rounded-full bg-${cat.color.split('-')[1]}-400 animate-pulse relative z-10`} />}
+            </button>
+          ))}
         </div>
 
-        {/* Sidebar Nav */}
-        <div className="w-full md:w-64 border-b md:border-b-0 md:border-r border-gray-800 p-4 shrink-0 bg-black/40 z-10 backdrop-blur-md">
-          <div className="space-y-6">
-            <div className="hidden md:block">
-              <h3 className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.4em] mb-4 px-2">Bandwidth_Frequencies</h3>
-              <div className="space-y-1">
-                {CATEGORIES.map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setActiveCat(cat.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-sm text-xs font-bold uppercase transition-all border ${
-                      activeCat === cat.id 
-                        ? 'bg-primary/10 border-primary text-primary shadow-[0_0_15px_rgba(var(--color-primary-rgb),0.2)]' 
-                        : 'bg-transparent border-gray-800 text-gray-500 hover:text-gray-300 hover:border-gray-600'
-                    }`}
-                  >
-                    <cat.icon size={14} className={activeCat === cat.id ? 'animate-pulse' : ''} />
-                    {cat.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="hidden md:block bg-gray-900/30 p-4 border border-gray-800 rounded">
-               <div className="flex justify-between items-center mb-2">
-                  <span className="text-[9px] text-gray-600 uppercase font-mono tracking-tighter">Signal_Integrity</span>
-                  <span className="text-[9px] text-primary animate-pulse font-mono">ENCRYPTED</span>
-               </div>
-               <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
-                  <MotionDiv animate={{ width: ['20%', '90%', '40%', '85%'] }} transition={{ duration: 4, repeat: Infinity }} className="h-full bg-primary" />
-               </div>
-               <div className="mt-3 grid grid-cols-4 gap-1">
-                  {Array.from({length: 8}).map((_, i) => (
-                    <div key={i} className={`h-1 rounded-full ${Math.random() > 0.5 ? 'bg-primary/40' : 'bg-gray-800'}`} />
-                  ))}
-               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Intelligence Feed */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 relative z-10 custom-scrollbar">
-          <AnimatePresence mode="wait">
-            {loading ? (
-              <MotionDiv 
-                key="loading"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="h-full flex flex-col items-center justify-center space-y-4"
-              >
-                <Satellite className="text-primary animate-bounce" size={48} />
-                <div className="text-primary font-mono text-xs tracking-[0.3em] uppercase animate-pulse">Syncing Deep-Net Nodes...</div>
-              </MotionDiv>
-            ) : (
-              <MotionDiv 
-                key="content"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto"
-              >
-                {visibleItems.map((item, idx) => (
-                  <MotionDiv
-                    key={item.id}
+        {/* News Feed */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 relative z-10 bg-[radial-gradient(ellipse_at_top_right,rgba(0,255,255,0.05),transparent_70%)]">
+            <AnimatePresence mode="wait">
+               {loading && news.length === 0 ? (
+                  <MotionDiv key="loader" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="h-full flex flex-col items-center justify-center">
+                      <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                      <div className="mt-4 text-xs font-mono text-primary animate-pulse">DECRYPTING SIGNAL...</div>
+                  </MotionDiv>
+               ) : (
+                  <MotionDiv 
+                    key={activeCat}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.1 }}
-                    className="group relative bg-gray-900/30 border border-gray-800 p-6 rounded hover:border-primary/50 transition-all duration-300 overflow-hidden"
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4"
                   >
-                    {/* Corner Decoration */}
-                    <div className="absolute top-0 right-0 w-8 h-8 border-t border-r border-gray-800 group-hover:border-primary transition-colors" />
-                    
-                    <div className="flex justify-between items-start mb-4">
-                       <span className={`text-[9px] font-mono px-2 py-0.5 rounded border ${
-                         item.priority === 'CRITICAL' ? 'bg-red-500/10 border-red-500/40 text-red-500' : 
-                         item.priority === 'HIGH' ? 'bg-orange-500/10 border-orange-500/40 text-orange-500' :
-                         'bg-primary/10 border-primary/40 text-primary'
-                       }`}>
-                          {item.priority} // {item.category}
-                       </span>
-                       <span className="text-[10px] font-mono text-gray-600">{item.timestamp}</span>
-                    </div>
+                     {filteredNews.map((item, i) => (
+                        <MotionDiv
+                          key={item.id}
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: i * 0.05 }}
+                          className="group relative bg-[#0a0a0a] border border-gray-800 p-5 rounded-lg hover:border-primary/50 transition-all hover:shadow-[0_0_20px_rgba(var(--color-primary-rgb),0.1)] flex flex-col"
+                        >
+                           {/* Category Tag */}
+                           <div className="flex justify-between items-start mb-3">
+                              <span className={`text-[9px] font-black px-2 py-0.5 rounded border border-gray-700 uppercase ${
+                                item.category === 'ai' ? 'text-purple-400 border-purple-400/30 bg-purple-400/10' :
+                                item.category === 'security' ? 'text-red-400 border-red-400/30 bg-red-400/10' :
+                                item.category === 'hardware' ? 'text-yellow-400 border-yellow-400/30 bg-yellow-400/10' :
+                                'text-blue-400 border-blue-400/30 bg-blue-400/10'
+                              }`}>
+                                {item.category}
+                              </span>
+                              <div className="flex items-center gap-2 text-[10px] text-gray-500 font-mono">
+                                 <span>{new Date(item.time * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                              </div>
+                           </div>
 
-                    <h3 className="text-xl font-black text-white mb-3 group-hover:text-primary transition-colors leading-tight uppercase">
-                       {item.title}
-                    </h3>
-                    <p className="text-xs text-gray-500 mb-6 leading-relaxed font-mono">
-                       {item.summary}
-                    </p>
+                           <a href={item.url} target="_blank" rel="noreferrer" className="block mb-4 flex-1">
+                              <h3 className="text-sm md:text-base font-bold text-gray-200 group-hover:text-primary transition-colors leading-snug line-clamp-3">
+                                 {item.title}
+                              </h3>
+                              <div className="mt-2 text-[10px] text-gray-500 font-mono truncate">
+                                 {item.domain}
+                              </div>
+                           </a>
 
-                    <div className="flex justify-between items-center pt-4 border-t border-gray-800/50">
-                       <div className="text-[10px] font-mono text-gray-500">
-                          SRC: <span className="text-gray-300">{item.source}</span>
-                       </div>
-                       <button className="text-[10px] font-bold text-primary flex items-center gap-1 hover:underline">
-                          DECRYPT_LINK <ExternalLink size={10} />
-                       </button>
-                    </div>
+                           <div className="mt-auto pt-3 border-t border-gray-800 flex justify-between items-center">
+                              <div className="flex gap-3 text-[10px] text-gray-500 font-bold">
+                                 <span className="flex items-center gap-1"><Activity size={10} /> {item.score} PTS</span>
+                                 <span className="flex items-center gap-1"><Radio size={10} /> {item.descendants || 0} COM</span>
+                              </div>
+                              <a 
+                                href={item.url} 
+                                target="_blank" 
+                                rel="noreferrer"
+                                className="p-1.5 bg-gray-800 rounded text-gray-400 hover:text-white hover:bg-primary/20 transition-all"
+                              >
+                                 <ExternalLink size={12} />
+                              </a>
+                           </div>
+                        </MotionDiv>
+                     ))}
                   </MotionDiv>
-                ))}
-              </MotionDiv>
-            )}
-          </AnimatePresence>
+               )}
+            </AnimatePresence>
         </div>
       </div>
-
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--color-primary); border-radius: 10px; }
-      `}</style>
     </div>
   );
 };
