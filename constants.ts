@@ -63,10 +63,65 @@ export const NAV_ITEMS = [
   { id: 'dossier', label: 'Dossier', icon: ShieldCheck, desc: 'Bio & Resume' },
   { id: 'projects', label: 'Projects', icon: Folder, desc: 'Case Studies' },
   { id: 'services', label: 'Services', icon: Layers, desc: 'Capabilities' },
-  { id: 'intel', label: 'Intel', icon: Activity, desc: 'News Feed' },
-  { id: 'market', label: 'Stocks', icon: BarChart3, desc: 'Market Data' },
+  { id: 'intel', label: 'Intel', icon: Activity, desc: 'Deep Net Feed' },
+  { id: 'market', label: 'Market', icon: BarChart3, desc: 'Quantum Ledger' },
   { id: 'arcade', label: 'Arcade', icon: Gamepad2, desc: 'Simulations' },
   { id: 'contact', label: 'Contact', icon: Send, desc: 'Transmission' },
+];
+
+export const MOCK_INTEL = [
+  {
+    id: 1,
+    title: "ZERO-DAY VULNERABILITY DETECTED",
+    summary: "Critical exploit found in major cloud hypervisors. Patching protocols initiated globally.",
+    source: "NetSec Sentinel",
+    category: "SECURITY",
+    timestamp: "02:44:12",
+    priority: "CRITICAL"
+  },
+  {
+    id: 2,
+    title: "QUANTUM CHIP EFFICIENCY BREAKTHROUGH",
+    summary: "New topological insulators allow for 400% increase in qubit coherence at room temperature.",
+    source: "Core Gear Labs",
+    category: "HARDWARE",
+    timestamp: "05:12:00",
+    priority: "HIGH"
+  },
+  {
+    id: 3,
+    title: "NEURAL LINK V3.5 FIRMWARE LEAKED",
+    summary: "Intercepted documentation suggests high-bandwidth visual cortex integration is now stable.",
+    source: "Dossier Internal",
+    category: "NEURAL",
+    timestamp: "09:33:45",
+    priority: "MEDIUM"
+  },
+  {
+    id: 4,
+    title: "AI AGENT AUTONOMY REACHES TIER 4",
+    summary: "LLMs now capable of recursive self-improvement without human-in-the-loop intervention.",
+    source: "Global Intelligence",
+    category: "AI",
+    timestamp: "12:01:10",
+    priority: "HIGH"
+  },
+  {
+    id: 5,
+    title: "DECENTRALIZED WEB PROTOCOL ACTIVATED",
+    summary: "The final layer of the non-custodial internet has been deployed across 40,000 nodes.",
+    source: "Wide Band Radio",
+    category: "CULTURE",
+    timestamp: "14:20:00",
+    priority: "LOW"
+  }
+];
+
+export const MOCK_ASSETS = [
+  { symbol: "NXS", name: "Nexus Coin", basePrice: 1450.20, volatility: 0.02 },
+  { symbol: "NRL", name: "Neural Link", basePrice: 42.55, volatility: 0.05 },
+  { symbol: "DMAT", name: "Dark Matter", basePrice: 8900.00, volatility: 0.01 },
+  { symbol: "OSX", name: "System Core", basePrice: 12.10, volatility: 0.08 },
 ];
 
 export const ACHIEVEMENTS_LIST: Achievement[] = [

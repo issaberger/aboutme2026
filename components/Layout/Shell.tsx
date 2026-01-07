@@ -8,6 +8,9 @@ import Cursor from './Cursor';
 import BootSequence from './BootSequence';
 import MatrixBackground from './MatrixBackground';
 
+// Fix: Cast motion.div to any to avoid TypeScript errors
+const MotionDiv = motion.div as any;
+
 interface ShellProps {
   children: React.ReactNode;
   activeModule: string;
@@ -146,7 +149,7 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
       {/* Main Content Area */}
       <main className="absolute top-16 bottom-8 left-0 right-0 overflow-hidden z-10">
         <AnimatePresence mode='wait'>
-          <motion.div
+          <MotionDiv
             key={activeModule}
             initial={{ opacity: 0, x: 10, filter: 'blur(5px)' }}
             animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
@@ -155,7 +158,7 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
             className="h-full w-full"
           >
             {children}
-          </motion.div>
+          </MotionDiv>
         </AnimatePresence>
       </main>
 
@@ -189,7 +192,7 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
       {/* Achievement Toast */}
       <AnimatePresence>
         {recentAchievement && (
-           <motion.div
+           <MotionDiv
              initial={{ y: 100, opacity: 0 }}
              animate={{ y: 0, opacity: 1 }}
              exit={{ y: 100, opacity: 0 }}
@@ -201,7 +204,7 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
                  <p className="text-white font-bold">{recentAchievement.title}</p>
                  <p className="text-gray-400 text-xs">{recentAchievement.description}</p>
               </div>
-           </motion.div>
+           </MotionDiv>
         )}
       </AnimatePresence>
 

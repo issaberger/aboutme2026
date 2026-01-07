@@ -4,6 +4,9 @@ import { useSystem } from '../../context/SystemContext';
 import { PROFILE, JOBS } from '../../constants';
 import { Terminal, Shield, Award, Languages, Briefcase, Calendar, Cpu, User, MapPin, HardDrive } from 'lucide-react';
 
+// Fix: Cast motion.div to any to avoid TypeScript errors
+const MotionDiv = motion.div as any;
+
 const DossierModule = () => {
   const { colors, proMode } = useSystem();
   const [history, setHistory] = useState<Array<{ cmd: string; output: React.ReactNode }>>([]);
@@ -142,7 +145,7 @@ const DossierModule = () => {
           <div className="absolute left-[15px] md:left-[19px] top-4 bottom-4 w-[1px] bg-gray-800" />
 
           {JOBS.map((job, idx) => (
-            <motion.div 
+            <MotionDiv 
               key={job.id}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -181,11 +184,11 @@ const DossierModule = () => {
                   ))}
                 </ul>
               </div>
-            </motion.div>
+            </MotionDiv>
           ))}
 
           {/* Education / Certs */}
-          <motion.div 
+          <MotionDiv 
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.5 }}
@@ -207,7 +210,7 @@ const DossierModule = () => {
                 ))}
               </div>
             </div>
-          </motion.div>
+          </MotionDiv>
         </div>
       </div>
     </div>

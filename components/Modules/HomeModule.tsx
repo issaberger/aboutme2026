@@ -5,6 +5,12 @@ import { PROFILE, NAV_ITEMS } from '../../constants';
 import CyberButton from '../ui/CyberButton';
 import { ArrowRight, FileText, Mail, Grid } from 'lucide-react';
 
+// Fix: Cast motion components to any to avoid TypeScript errors with framer-motion props
+const MotionDiv = motion.div as any;
+const MotionSpan = motion.span as any;
+const MotionP = motion.p as any;
+const MotionButton = motion.button as any;
+
 const HomeModule = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
   const { proMode, colors } = useSystem();
   const [subtitleIndex, setSubtitleIndex] = useState(0);
@@ -23,7 +29,7 @@ const HomeModule = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
       {!proMode && (
         <div className="fixed inset-0 z-0 opacity-20 perspective-1000 pointer-events-none">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] [transform:rotateX(60deg)_scale(2)] origin-top animate-[pulse-fast_10s_infinite]" />
-          <motion.div 
+          <MotionDiv 
             className="absolute top-1/2 left-1/2 w-[600px] h-[600px] rounded-full blur-[100px]"
             animate={{
               background: [
@@ -43,7 +49,7 @@ const HomeModule = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
       {/* Hero Section */}
       <div className="relative z-10 max-w-4xl w-full text-center space-y-4 md:space-y-6 pt-10 md:pt-20 shrink-0">
         
-        <motion.div
+        <MotionDiv
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -57,7 +63,7 @@ const HomeModule = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
               {PROFILE.name.toUpperCase()}
             </span>
             {!proMode && (
-               <motion.span 
+               <MotionSpan 
                  className="absolute -inset-1 bg-primary/20 blur-xl -z-10"
                  animate={{ opacity: [0.5, 0.8, 0.5] }}
                  transition={{ duration: 2, repeat: Infinity }}
@@ -66,7 +72,7 @@ const HomeModule = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
           </h1>
 
           <div className="h-8 md:h-12 overflow-hidden mt-2">
-            <motion.p
+            <MotionP
               key={subtitleIndex}
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -74,14 +80,14 @@ const HomeModule = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
               className="text-lg md:text-2xl text-gray-400 font-mono"
             >
               {`> ${PROFILE.taglines[subtitleIndex]}`}
-            </motion.p>
+            </MotionP>
           </div>
-        </motion.div>
+        </MotionDiv>
 
       </div>
 
       {/* Module Grid - "Easier Navigation" */}
-      <motion.div
+      <MotionDiv
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
@@ -94,7 +100,7 @@ const HomeModule = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           {NAV_ITEMS.filter(item => item.id !== 'home').map((item, idx) => (
-             <motion.button
+             <MotionButton
                key={item.id}
                onClick={() => onNavigate(item.id)}
                whileHover={{ scale: 1.02, y: -2 }}
@@ -113,10 +119,10 @@ const HomeModule = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
                    <div className="font-bold text-white group-hover:text-primary transition-colors">{item.label}</div>
                    <div className="text-[10px] text-gray-500 font-mono mt-1 group-hover:text-gray-400">{item.desc}</div>
                 </div>
-             </motion.button>
+             </MotionButton>
           ))}
         </div>
-      </motion.div>
+      </MotionDiv>
 
       <style>{`
         .glitch-text {

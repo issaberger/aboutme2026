@@ -7,6 +7,9 @@ interface CyberButtonProps extends HTMLMotionProps<"button"> {
   glitch?: boolean;
 }
 
+// Fix: Cast motion.button to any to avoid TypeScript errors with framer-motion props
+const MotionButton = motion.button as any;
+
 const CyberButton: React.FC<CyberButtonProps> = ({ 
   children, 
   variant = 'primary', 
@@ -25,7 +28,7 @@ const CyberButton: React.FC<CyberButtonProps> = ({
   };
 
   return (
-    <motion.button
+    <MotionButton
       whileHover={proMode ? {} : { scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       className={`${baseStyles} ${variants[variant]} ${className}`}
@@ -44,7 +47,7 @@ const CyberButton: React.FC<CyberButtonProps> = ({
           <span className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-current opacity-50" />
         </>
       )}
-    </motion.button>
+    </MotionButton>
   );
 };
 

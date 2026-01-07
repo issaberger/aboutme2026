@@ -5,6 +5,9 @@ import { Search, ArrowRight, Monitor, Folder, Activity, ShieldCheck, BarChart3 }
 import { PaletteName } from '../../types';
 import { PALETTES } from '../../constants';
 
+// Fix: Cast motion.div to any to avoid TypeScript errors
+const MotionDiv = motion.div as any;
+
 interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
@@ -43,7 +46,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, onNavi
   return (
     <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[20vh] px-4">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
-      <motion.div 
+      <MotionDiv 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="relative w-full max-w-xl bg-gray-900 border border-gray-700 rounded-xl shadow-2xl overflow-hidden"
@@ -81,7 +84,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, onNavi
            <span>Navigate ↑↓</span>
            <span>Close ESC</span>
         </div>
-      </motion.div>
+      </MotionDiv>
     </div>
   );
 };

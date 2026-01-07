@@ -4,6 +4,9 @@ import { SERVICES } from '../../constants';
 import * as Icons from 'lucide-react';
 import { useSystem } from '../../context/SystemContext';
 
+// Fix: Cast motion.div to any to avoid TypeScript errors
+const MotionDiv = motion.div as any;
+
 const ServicesModule = () => {
   const { colors, proMode } = useSystem();
 
@@ -16,7 +19,7 @@ const ServicesModule = () => {
         {SERVICES.map((service, idx) => {
           const Icon = (Icons as any)[service.icon] || Icons.HelpCircle;
           return (
-            <motion.div
+            <MotionDiv
               key={service.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -41,7 +44,7 @@ const ServicesModule = () => {
                     Request Details <Icons.ArrowRight size={12} />
                  </button>
               </div>
-            </motion.div>
+            </MotionDiv>
           );
         })}
       </div>

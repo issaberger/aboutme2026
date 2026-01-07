@@ -5,6 +5,9 @@ import { PROFILE } from '../../constants';
 import CyberButton from '../ui/CyberButton';
 import { useSystem } from '../../context/SystemContext';
 
+// Fix: Cast motion.div to any to avoid TypeScript errors
+const MotionDiv = motion.div as any;
+
 const ContactModule = () => {
   const [sent, setSent] = useState(false);
   const { colors } = useSystem();
@@ -29,13 +32,13 @@ const ContactModule = () => {
   if (sent) {
     return (
         <div className="h-full flex flex-col items-center justify-center text-center p-8">
-            <motion.div 
+            <MotionDiv 
                 initial={{ scale: 0 }} 
                 animate={{ scale: 1 }}
                 className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center text-green-500 mb-6"
             >
                 <Check size={40} />
-            </motion.div>
+            </MotionDiv>
             <h2 className="text-2xl font-bold text-white mb-2">TRANSMISSION INITIATED</h2>
             <p className="text-gray-400 max-w-md">
                 Protocol initialized. If your default mail client did not open, please manually send your encrypted packet to <strong>bergerissa@gmail.com</strong>.
@@ -82,7 +85,7 @@ const ContactModule = () => {
                 {/* Interactive Map Location Card */}
                 <div className="relative group h-32 w-full overflow-hidden bg-gray-900 border border-gray-800 rounded cursor-crosshair">
                      {/* Map Background Layer - Abstract Tech Map */}
-                    <motion.div
+                    <MotionDiv
                         className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=1000')] bg-cover bg-center opacity-30 group-hover:opacity-50 transition-opacity duration-500"
                         initial={{ scale: 1 }}
                         whileHover={{ scale: 3, rotate: 5 }}
@@ -94,7 +97,7 @@ const ContactModule = () => {
                     <div className="absolute inset-0 bg-gradient-to-r from-gray-950 via-gray-950/80 to-transparent pointer-events-none" />
 
                     {/* Scanning Line */}
-                    <motion.div 
+                    <MotionDiv 
                         className="absolute top-0 left-0 w-full h-0.5 bg-primary/40 shadow-[0_0_15px_var(--color-primary)] z-10"
                         animate={{ top: ['0%', '100%'], opacity: [0, 1, 0] }}
                         transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
@@ -128,7 +131,7 @@ const ContactModule = () => {
                     </div>
 
                     {/* Targeting Reticle Overlay (Visible on Hover) */}
-                    <motion.div 
+                    <MotionDiv 
                        className="absolute inset-0 flex items-center justify-center pointer-events-none"
                        initial={{ opacity: 0 }}
                        whileHover={{ opacity: 1 }}
@@ -142,7 +145,7 @@ const ContactModule = () => {
                          <div className="absolute bottom-4 right-4 text-[10px] text-primary font-mono">
                             TARGET ACQUIRED
                          </div>
-                    </motion.div>
+                    </MotionDiv>
                 </div>
             </div>
         </div>

@@ -6,6 +6,9 @@ import { Project } from '../../types';
 import { X, Cpu, PenTool, BarChart } from 'lucide-react';
 import CyberButton from '../ui/CyberButton';
 
+// Fix: Cast motion.div to any to avoid TypeScript errors
+const MotionDiv = motion.div as any;
+
 // Moved Section component to the top to ensure it is defined before usage in ProjectsModule.
 // We make children optional in the type definition to resolve TypeScript errors that sometimes
 // occur when children are passed via nesting rather than as an explicit attribute in certain TS/React environments.
@@ -58,7 +61,7 @@ const ProjectsModule = () => {
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto pb-20">
         {filteredProjects.map((project) => (
-          <motion.div
+          <MotionDiv
             layoutId={project.id}
             key={project.id}
             onClick={() => handleOpen(project.id)}
@@ -103,7 +106,7 @@ const ProjectsModule = () => {
               <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors">{project.title}</h3>
               <p className="text-sm text-gray-400 line-clamp-2">{project.description}</p>
             </div>
-          </motion.div>
+          </MotionDiv>
         ))}
       </div>
 
@@ -112,7 +115,7 @@ const ProjectsModule = () => {
         {selectedId && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
              {/* Backdrop */}
-             <motion.div 
+             <MotionDiv 
                initial={{ opacity: 0 }} 
                animate={{ opacity: 1 }} 
                exit={{ opacity: 0 }}
@@ -121,7 +124,7 @@ const ProjectsModule = () => {
              />
 
              {/* Modal Content */}
-             <motion.div 
+             <MotionDiv 
                layoutId={selectedId}
                className="relative w-full max-w-4xl bg-gray-900 border border-gray-700 rounded-lg overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
                style={{ boxShadow: `0 0 30px ${colors.primary}20` }}
@@ -197,7 +200,7 @@ const ProjectsModule = () => {
                     </div>
                   );
                 })()}
-             </motion.div>
+             </MotionDiv>
           </div>
         )}
       </AnimatePresence>

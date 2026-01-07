@@ -3,6 +3,9 @@ import { motion } from 'framer-motion';
 import { JOBS } from '../../constants';
 import { Briefcase, Calendar } from 'lucide-react';
 
+// Fix: Cast motion.div to any to avoid TypeScript errors
+const MotionDiv = motion.div as any;
+
 const ResumeModule = () => {
   return (
     <div className="h-full overflow-y-auto p-8">
@@ -11,7 +14,7 @@ const ResumeModule = () => {
         
         <div className="relative border-l-2 border-gray-800 ml-4 md:ml-12 space-y-12">
           {JOBS.map((job, idx) => (
-            <motion.div 
+            <MotionDiv 
               key={job.id}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -39,11 +42,11 @@ const ResumeModule = () => {
                     ))}
                  </ul>
               </div>
-            </motion.div>
+            </MotionDiv>
           ))}
           
           {/* Education Node */}
-          <motion.div 
+          <MotionDiv 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.8 }}
@@ -54,7 +57,7 @@ const ResumeModule = () => {
                  <h3 className="text-lg font-bold text-white">Career Diploma in Web Page Design</h3>
                  <p className="text-gray-400 text-sm">Pennfoster Career School | 2018 – 2021</p>
               </div>
-          </motion.div>
+          </MotionDiv>
         </div>
       </div>
     </div>

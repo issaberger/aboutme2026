@@ -3,6 +3,9 @@ import { motion } from 'framer-motion';
 import { useSystem } from '../../context/SystemContext';
 import { Terminal, Shield, Award, Languages } from 'lucide-react';
 
+// Fix: Cast motion.div to any to avoid TypeScript errors
+const MotionDiv = motion.div as any;
+
 const AboutModule = () => {
   const { colors, proMode } = useSystem();
   const [history, setHistory] = useState<Array<{ cmd: string; output: React.ReactNode }>>([]);
@@ -138,7 +141,7 @@ const AboutModule = () => {
 
         <div className="space-y-4">
           {history.map((entry, i) => (
-            <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
+            <MotionDiv key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
               <div className="flex gap-2 opacity-70">
                 <span>$</span>
                 <span>{entry.cmd}</span>
@@ -146,7 +149,7 @@ const AboutModule = () => {
               <div className="mt-1 ml-4 text-gray-200" style={{ color: proMode ? '#333' : '#eee' }}>
                 {entry.output}
               </div>
-            </motion.div>
+            </MotionDiv>
           ))}
           <div ref={bottomRef} />
         </div>
