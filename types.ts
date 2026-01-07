@@ -1,4 +1,5 @@
 export type PaletteName = 'NEON_RAIN' | 'ACID_JUNGLE' | 'VIOLET_CIRCUIT' | 'RED_ALERT' | 'BLUE_ICE';
+export type ThemeMode = 'light' | 'dark';
 
 export interface ThemeColors {
   primary: string;
@@ -6,6 +7,7 @@ export interface ThemeColors {
   accent: string;
   bg: string;
   panel: string;
+  text: string;
 }
 
 export interface Achievement {

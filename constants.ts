@@ -27,6 +27,7 @@ export const PALETTES: Record<PaletteName, ThemeColors> = {
     accent: '#fde047', // Yellow 300
     bg: '#050505',
     panel: 'rgba(22, 22, 22, 0.8)',
+    text: '#e0e0e0',
   },
   ACID_JUNGLE: {
     primary: '#84cc16', // Lime 500
@@ -34,6 +35,7 @@ export const PALETTES: Record<PaletteName, ThemeColors> = {
     accent: '#facc15', // Yellow 400
     bg: '#020602',
     panel: 'rgba(10, 25, 10, 0.8)',
+    text: '#e0e0e0',
   },
   VIOLET_CIRCUIT: {
     primary: '#8b5cf6', // Violet 500
@@ -41,6 +43,7 @@ export const PALETTES: Record<PaletteName, ThemeColors> = {
     accent: '#f472b6', // Pink 400
     bg: '#0b0014',
     panel: 'rgba(20, 10, 30, 0.8)',
+    text: '#e0e0e0',
   },
   RED_ALERT: {
     primary: '#ef4444', // Red 500
@@ -48,6 +51,7 @@ export const PALETTES: Record<PaletteName, ThemeColors> = {
     accent: '#ffffff', // White
     bg: '#1a0505',
     panel: 'rgba(30, 10, 10, 0.8)',
+    text: '#e0e0e0',
   },
   BLUE_ICE: {
     primary: '#38bdf8', // Sky 400
@@ -55,6 +59,7 @@ export const PALETTES: Record<PaletteName, ThemeColors> = {
     accent: '#e0f2fe', // Sky 100
     bg: '#081018',
     panel: 'rgba(10, 20, 30, 0.8)',
+    text: '#e0e0e0',
   },
 };
 

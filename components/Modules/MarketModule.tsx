@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, TrendingDown, Activity, LineChart, ShieldCheck, Zap, DollarSign, RefreshCw, AlertTriangle } from 'lucide-react';
 import CyberButton from '../ui/CyberButton';
+import { useSystem } from '../../context/SystemContext';
 
 const MotionDiv = motion.div as any;
 
@@ -55,13 +56,20 @@ const LiveChart = ({ data, color }: { data: number[], color: string }) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let width = canvas.width = canvas.offsetWidth;
-    let height = canvas.height = canvas.offsetHeight;
+    // Handle resizing
+    const resize = () => {
+       canvas.width = canvas.offsetWidth;
+       canvas.height = canvas.offsetHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    let width = canvas.width;
+    let height = canvas.height;
     
-    // Resize observer could go here, but simple reset works for now
     ctx.clearRect(0, 0, width, height);
 
-    if (data.length < 2) return;
+    if (data.length < 2) return () => window.removeEventListener('resize', resize);
 
     const min = Math.min(...data);
     const max = Math.max(...data);
@@ -88,7 +96,6 @@ const LiveChart = ({ data, color }: { data: number[], color: string }) => {
            const xc = (getX(i) + getX(i - 1)) / 2;
            const yc = (getY(v) + getY(data[i - 1])) / 2;
            ctx.quadraticCurveTo(getX(i - 1), getY(data[i - 1]), xc, yc);
-           // ctx.lineTo(getX(i), getY(v)); // Straight line fallback
         }
     });
     ctx.lineTo(getX(data.length - 1), getY(data[data.length - 1]));
@@ -113,37 +120,82 @@ const LiveChart = ({ data, color }: { data: number[], color: string }) => {
     ctx.arc(width, lastY, 4, 0, Math.PI*2);
     ctx.fill();
 
+    return () => window.removeEventListener('resize', resize);
+
   }, [data, color]);
 
   return <canvas ref={canvasRef} className="w-full h-full block" />;
 };
 
 const MarketModule = () => {
+  const { themeMode } = useSystem();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [selectedSymbol, setSelectedSymbol] = useState<string>('BTCUSDT');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [usingSimulation, setUsingSimulation] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string>('');
+
+  // Fallback Simulation Data Generator
+  const generateSimulatedData = (prevAssets: Asset[]): Asset[] => {
+     if (prevAssets.length === 0) {
+        // Initial Mock
+        return SYMBOLS.map(sym => ({
+            symbol: sym,
+            priceChange: '0.00',
+            priceChangePercent: (Math.random() * 10 - 5).toFixed(2),
+            weightedAvgPrice: '0',
+            prevClosePrice: '0',
+            lastPrice: (Math.random() * 1000 + 100).toFixed(2),
+            lastQty: '0',
+            bidPrice: '0',
+            askPrice: '0',
+            openPrice: '0',
+            highPrice: '0',
+            lowPrice: '0',
+            volume: (Math.random() * 1000000).toFixed(0),
+            quoteVolume: (Math.random() * 10000000).toFixed(0),
+            openTime: Date.now(),
+            closeTime: Date.now(),
+            firstId: 0,
+            lastId: 0,
+            count: 0,
+            name: SYMBOL_NAMES[sym] || sym,
+            history: Array.from({length: 20}, () => Math.random() * 1000 + 100)
+        }));
+     }
+     
+     return prevAssets.map(a => {
+        const lastPrice = parseFloat(a.lastPrice);
+        const change = (Math.random() - 0.5) * (lastPrice * 0.02);
+        const newPrice = Math.max(1, lastPrice + change);
+        const newHistory = [...a.history, newPrice];
+        if (newHistory.length > 50) newHistory.shift();
+        
+        return {
+           ...a,
+           lastPrice: newPrice.toFixed(2),
+           priceChangePercent: ((newPrice - newHistory[0]) / newHistory[0] * 100).toFixed(2),
+           history: newHistory
+        };
+     });
+  };
 
   const fetchPrices = async () => {
     try {
-      // Using Binance Public API (No key required for public ticker data)
-      // Note: In production, proxying this request is better to avoid CORS, but Binance usually allows simple GETs or we use a public CORS proxy if strict.
-      // Trying direct first.
+      if (usingSimulation) {
+          throw new Error("Already using sim");
+      }
       const res = await fetch('https://api.binance.com/api/v3/ticker/24hr');
       if (!res.ok) throw new Error('API_UNREACHABLE');
       const allData: TickerData[] = await res.json();
       
-      // Filter only our symbols
       const relevantData = allData.filter(d => SYMBOLS.includes(d.symbol));
 
       setAssets(prev => {
         return relevantData.map(newData => {
            const prevAsset = prev.find(p => p.symbol === newData.symbol);
            const price = parseFloat(newData.lastPrice);
-           
-           // Maintain a small history buffer for the sparkline
-           let newHistory = prevAsset ? [...prevAsset.history, price] : [price * 0.98, price * 0.99, price * 1.01, price]; // Fake initial history if new
+           let newHistory = prevAsset ? [...prevAsset.history, price] : [price * 0.98, price * 0.99, price * 1.01, price];
            if (newHistory.length > 50) newHistory.shift();
 
            return {
@@ -154,10 +206,14 @@ const MarketModule = () => {
         });
       });
       setLastUpdated(new Date().toLocaleTimeString());
-      setError(null);
     } catch (err) {
-      console.error(err);
-      setError("CONNECTION_LOST // REROUTING...");
+      // Fallback to simulation
+      if (!usingSimulation) {
+         console.warn("API Failed, switching to simulation mode.");
+         setUsingSimulation(true);
+      }
+      setAssets(prev => generateSimulatedData(prev));
+      setLastUpdated(new Date().toLocaleTimeString());
     } finally {
       setLoading(false);
     }
@@ -165,41 +221,43 @@ const MarketModule = () => {
 
   useEffect(() => {
     fetchPrices();
-    const interval = setInterval(fetchPrices, 3000); // 3s polling for "Real Time" feel
+    const interval = setInterval(fetchPrices, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [usingSimulation]);
 
   const activeAsset = assets.find(a => a.symbol === selectedSymbol) || assets[0];
   const isPositive = activeAsset ? parseFloat(activeAsset.priceChangePercent) >= 0 : true;
-  const themeColor = isPositive ? '#10b981' : '#ef4444'; // Emerald vs Red
+  const themeColor = isPositive ? '#10b981' : '#ef4444';
 
   return (
-    <div className="h-full w-full bg-[#050505] text-[#e0e0e0] flex flex-col font-mono overflow-hidden">
-      {/* Vibrant Header */}
-      <div className="border-b border-white/10 p-4 flex justify-between items-center bg-black/60 backdrop-blur-md z-20">
+    <div className="h-full w-full bg-bg text-[var(--color-text)] flex flex-col font-mono overflow-hidden transition-colors duration-500">
+      {/* Header */}
+      <div className={`border-b p-4 flex justify-between items-center backdrop-blur-md z-20 ${themeMode === 'light' ? 'bg-white/60 border-gray-200' : 'bg-black/60 border-white/10'}`}>
         <div className="flex items-center gap-4">
-           <div className={`w-10 h-10 rounded-lg flex items-center justify-center bg-gradient-to-br ${isPositive ? 'from-green-500/20 to-green-900/20 text-green-400' : 'from-red-500/20 to-red-900/20 text-red-400'} border border-white/10 shadow-[0_0_15px_rgba(0,0,0,0.5)]`}>
+           <div className={`w-10 h-10 rounded-lg flex items-center justify-center bg-gradient-to-br ${isPositive ? 'from-green-500/20 to-green-900/20 text-green-400' : 'from-red-500/20 to-red-900/20 text-red-400'} shadow-[0_0_15px_rgba(0,0,0,0.1)] border ${themeMode === 'light' ? 'border-gray-300' : 'border-white/10'}`}>
               <LineChart size={20} />
            </div>
            <div>
-              <h1 className="text-xl font-black tracking-tighter text-white flex items-center gap-2">
+              <h1 className="text-xl font-black tracking-tighter flex items-center gap-2">
                  CRYPTO_NEXUS 
-                 <span className="text-[10px] font-normal opacity-50 bg-white/10 px-1.5 rounded">LIVE</span>
+                 <span className={`text-[10px] font-normal opacity-50 px-1.5 rounded ${themeMode === 'light' ? 'bg-black/10' : 'bg-white/10'}`}>
+                    {usingSimulation ? 'SIMULATION' : 'LIVE'}
+                 </span>
               </h1>
-              <p className="text-[10px] tracking-widest text-gray-500 font-bold">DECENTRALIZED EXCHANGE FEED</p>
+              <p className="text-[10px] tracking-widest opacity-50 font-bold">DECENTRALIZED EXCHANGE FEED</p>
            </div>
         </div>
-        <div className="hidden md:flex flex-col items-end gap-1 text-[10px] text-gray-500 font-bold">
+        <div className="hidden md:flex flex-col items-end gap-1 text-[10px] opacity-50 font-bold">
            <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"/> SOCKET: CONNECTED</div>
            <div>UPDATED: {lastUpdated}</div>
         </div>
       </div>
 
       <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
-        {/* Market Sidebar */}
-        <div className="w-full md:w-72 border-b md:border-b-0 md:border-r border-white/10 bg-black/20 flex md:flex-col gap-1 overflow-x-auto md:overflow-y-auto shrink-0 z-10 custom-scrollbar">
+        {/* Market Sidebar - Horizontal on mobile, Vertical on Desktop */}
+        <div className={`w-full md:w-72 border-b md:border-b-0 md:border-r flex md:flex-col gap-1 overflow-x-auto md:overflow-y-auto shrink-0 z-10 custom-scrollbar ${themeMode === 'light' ? 'bg-gray-50 border-gray-200' : 'bg-black/20 border-white/10'}`}>
           {loading && assets.length === 0 ? (
-             <div className="p-8 text-center text-xs text-gray-500 animate-pulse">INITIALIZING FEED...</div>
+             <div className="p-8 text-center text-xs opacity-50 animate-pulse">INITIALIZING FEED...</div>
           ) : (
             assets.map(asset => {
               const isUp = parseFloat(asset.priceChangePercent) >= 0;
@@ -207,28 +265,23 @@ const MarketModule = () => {
                 <button
                   key={asset.symbol}
                   onClick={() => setSelectedSymbol(asset.symbol)}
-                  className={`p-4 text-left border-l-4 transition-all flex justify-between items-center group relative overflow-hidden ${
+                  className={`p-4 text-left border-l-4 transition-all flex justify-between items-center group relative overflow-hidden min-w-[200px] md:min-w-0 ${
                     selectedSymbol === asset.symbol 
-                      ? `bg-white/5 border-${isUp ? 'green' : 'red'}-500 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]` 
-                      : 'border-transparent hover:bg-white/5 opacity-60 hover:opacity-100'
+                      ? `border-${isUp ? 'green' : 'red'}-500 ${themeMode === 'light' ? 'bg-white shadow-sm' : 'bg-white/5'}` 
+                      : 'border-transparent opacity-60 hover:opacity-100 hover:bg-black/5'
                   }`}
                 >
                   <div className="relative z-10">
-                    <div className="font-black text-sm text-white">{asset.symbol.replace('USDT', '')}</div>
-                    <div className="text-[10px] font-bold text-gray-500">{asset.name}</div>
+                    <div className="font-black text-sm">{asset.symbol.replace('USDT', '')}</div>
+                    <div className="text-[10px] font-bold opacity-50">{asset.name}</div>
                   </div>
                   <div className="text-right relative z-10">
-                    <div className="text-sm font-bold text-white">${parseFloat(asset.lastPrice).toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
-                    <div className={`text-[10px] font-black flex items-center justify-end gap-1 ${isUp ? 'text-green-400' : 'text-red-400'}`}>
+                    <div className="text-sm font-bold">${parseFloat(asset.lastPrice).toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                    <div className={`text-[10px] font-black flex items-center justify-end gap-1 ${isUp ? 'text-green-500' : 'text-red-500'}`}>
                        {isUp ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
                        {asset.priceChangePercent}%
                     </div>
                   </div>
-                  
-                  {/* Subtle BG Gradient based on trend */}
-                  {selectedSymbol === asset.symbol && (
-                     <div className={`absolute inset-0 opacity-10 bg-gradient-to-r ${isUp ? 'from-green-500 to-transparent' : 'from-red-500 to-transparent'}`} />
-                  )}
                 </button>
               );
             })
@@ -236,59 +289,35 @@ const MarketModule = () => {
         </div>
 
         {/* Main Terminal View */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 flex flex-col bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.03),transparent)] relative">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 flex flex-col bg-[radial-gradient(circle_at_center,rgba(var(--color-primary-rgb),0.03),transparent)] relative">
            
-           {error && (
-             <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-                <div className="p-6 border border-red-500/50 bg-red-500/10 rounded-lg text-center">
-                   <AlertTriangle className="mx-auto text-red-500 mb-2" />
-                   <h3 className="text-red-500 font-bold mb-1">DATA STREAM INTERRUPTED</h3>
-                   <p className="text-xs text-red-400/70 mb-4">{error}</p>
-                   <CyberButton onClick={fetchPrices} variant="danger">RECONNECT</CyberButton>
-                </div>
-             </div>
-           )}
-
            {activeAsset && (
              <>
                {/* Hero Metrics */}
                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="p-4 bg-black/40 border border-white/10 rounded-lg backdrop-blur">
-                     <div className="text-[10px] text-gray-500 font-bold uppercase mb-1">Current Price</div>
-                     <div className={`text-2xl md:text-3xl font-black ${themeColor === '#10b981' ? 'text-green-400' : 'text-red-400'}`}>
-                        ${parseFloat(activeAsset.lastPrice).toLocaleString()}
-                     </div>
-                  </div>
-                  <div className="p-4 bg-black/40 border border-white/10 rounded-lg backdrop-blur">
-                     <div className="text-[10px] text-gray-500 font-bold uppercase mb-1">24h Volume</div>
-                     <div className="text-xl md:text-2xl font-bold text-white">
-                        ${(parseFloat(activeAsset.quoteVolume) / 1000000).toFixed(2)}M
-                     </div>
-                  </div>
-                  <div className="p-4 bg-black/40 border border-white/10 rounded-lg backdrop-blur">
-                     <div className="text-[10px] text-gray-500 font-bold uppercase mb-1">High (24h)</div>
-                     <div className="text-xl md:text-2xl font-bold text-white">
-                        ${parseFloat(activeAsset.highPrice).toLocaleString()}
-                     </div>
-                  </div>
-                  <div className="p-4 bg-black/40 border border-white/10 rounded-lg backdrop-blur">
-                     <div className="text-[10px] text-gray-500 font-bold uppercase mb-1">Low (24h)</div>
-                     <div className="text-xl md:text-2xl font-bold text-white">
-                        ${parseFloat(activeAsset.lowPrice).toLocaleString()}
-                     </div>
-                  </div>
+                  {[
+                    { label: 'Current Price', value: `$${parseFloat(activeAsset.lastPrice).toLocaleString()}`, color: themeColor },
+                    { label: '24h Volume', value: `$${(parseFloat(activeAsset.quoteVolume) / 1000000).toFixed(2)}M`, color: '' },
+                    { label: 'High (24h)', value: `$${parseFloat(activeAsset.highPrice).toLocaleString()}`, color: '' },
+                    { label: 'Low (24h)', value: `$${parseFloat(activeAsset.lowPrice).toLocaleString()}`, color: '' }
+                  ].map((m, i) => (
+                      <div key={i} className={`p-4 border rounded-lg backdrop-blur ${themeMode === 'light' ? 'bg-white/60 border-gray-200' : 'bg-black/40 border-white/10'}`}>
+                         <div className="text-[10px] opacity-50 font-bold uppercase mb-1">{m.label}</div>
+                         <div className="text-xl md:text-2xl font-black" style={{ color: m.color || 'inherit' }}>
+                            {m.value}
+                         </div>
+                      </div>
+                  ))}
                </div>
 
                {/* Chart View */}
-               <div className="flex-1 min-h-[300px] bg-black/40 border border-white/10 rounded-lg p-1 relative overflow-hidden group">
-                  <div className="absolute top-0 left-0 w-full h-1 bg-white/5 z-10">
-                     {loading && <MotionDiv className="h-full bg-white/50" initial={{width:0}} animate={{width:'100%'}} transition={{duration:3, repeat:Infinity}} />}
-                  </div>
-                  <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:20px_20px]" />
+               <div className={`flex-1 min-h-[300px] border rounded-lg p-1 relative overflow-hidden group ${themeMode === 'light' ? 'bg-white border-gray-200' : 'bg-black/40 border-white/10'}`}>
+                  {/* Grid Background */}
+                  <div className={`absolute inset-0 opacity-10 bg-[size:20px_20px] ${themeMode === 'light' ? 'bg-[linear-gradient(rgba(0,0,0,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.05)_1px,transparent_1px)]' : 'bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)]'}`} />
+                  
                   <div className="absolute top-4 right-4 z-10 flex gap-2">
-                     <span className="px-2 py-1 bg-black/50 border border-white/20 rounded text-[10px] font-bold text-gray-400">1H</span>
-                     <span className="px-2 py-1 bg-white/10 border border-white/40 rounded text-[10px] font-bold text-white">1D</span>
-                     <span className="px-2 py-1 bg-black/50 border border-white/20 rounded text-[10px] font-bold text-gray-400">1W</span>
+                     <span className={`px-2 py-1 border rounded text-[10px] font-bold ${themeMode === 'light' ? 'bg-gray-100 border-gray-300' : 'bg-black/50 border-white/20'}`}>1H</span>
+                     <span className={`px-2 py-1 border rounded text-[10px] font-bold ${themeMode === 'light' ? 'bg-black text-white border-black' : 'bg-white/10 border-white/40 text-white'}`}>1D</span>
                   </div>
                   <div className="w-full h-full p-4 relative z-0">
                      <LiveChart data={activeAsset.history} color={themeColor} />
@@ -310,9 +339,8 @@ const MarketModule = () => {
       </div>
 
       <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #555; border-radius: 10px; }
       `}</style>
     </div>
   );

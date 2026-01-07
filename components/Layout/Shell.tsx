@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSystem } from '../../context/SystemContext';
 import { PaletteName, Achievement } from '../../types';
 import { PALETTES, ACHIEVEMENTS_LIST, NAV_ITEMS } from '../../constants';
-import { Menu, Palette, Wifi, Activity, Battery, Clock } from 'lucide-react';
+import { Menu, Palette, Wifi, Activity, Battery, Clock, Sun, Moon } from 'lucide-react';
 import Cursor from './Cursor';
 import BootSequence from './BootSequence';
 import MatrixBackground from './MatrixBackground';
@@ -22,7 +22,8 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
     proMode, toggleProMode, 
     palette, setPalette, colors,
     booted, setBooted,
-    achievements
+    achievements,
+    themeMode, toggleThemeMode
   } = useSystem();
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -56,6 +57,7 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
     '--color-accent': colors.accent,
     '--color-bg': colors.bg,
     '--color-panel': colors.panel,
+    '--color-text': colors.text,
     '--color-primary-rgb': palette === 'NEON_RAIN' ? '6, 182, 212' : 
                           palette === 'ACID_JUNGLE' ? '132, 204, 22' :
                           palette === 'VIOLET_CIRCUIT' ? '139, 92, 246' :
@@ -71,16 +73,16 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
   }
 
   return (
-    <div style={styleVars} className={`fixed inset-0 overflow-hidden bg-bg text-gray-200 transition-colors duration-500 font-sans ${!proMode ? 'font-cyber' : ''}`}>
+    <div style={styleVars} className={`fixed inset-0 overflow-hidden bg-bg text-[var(--color-text)] transition-colors duration-500 font-sans ${!proMode ? 'font-cyber' : ''}`}>
       <Cursor />
       
       {/* Background Effects */}
-      {!proMode && <MatrixBackground />}
+      {!proMode && themeMode === 'dark' && <MatrixBackground />}
       {!proMode && <div className="absolute inset-0 pointer-events-none z-50 scanlines opacity-10" />}
       {!proMode && <div className="absolute inset-0 pointer-events-none z-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/5 via-bg to-bg" />}
 
       {/* Top Bar */}
-      <header className="fixed top-0 left-0 right-0 h-16 border-b border-gray-800 bg-bg/90 backdrop-blur-md z-40 flex items-center justify-between px-6">
+      <header className={`fixed top-0 left-0 right-0 h-16 border-b z-40 flex items-center justify-between px-6 backdrop-blur-md transition-colors ${themeMode === 'light' ? 'bg-white/80 border-gray-200' : 'bg-black/80 border-gray-800'}`}>
         <div className="flex items-center gap-4">
           <div 
              className="w-8 h-8 bg-primary rounded-sm flex items-center justify-center font-black text-bg cursor-pointer hover:animate-pulse"
@@ -93,7 +95,7 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
           </span>
         </div>
 
-        <nav className="hidden md:flex items-center gap-1 bg-black/20 p-1 rounded-full border border-gray-800">
+        <nav className={`hidden md:flex items-center gap-1 p-1 rounded-full border transition-colors ${themeMode === 'light' ? 'bg-gray-100 border-gray-300' : 'bg-black/20 border-gray-800'}`}>
           {NAV_ITEMS.map(item => (
             <button
               key={item.id}
@@ -101,7 +103,7 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
               className={`px-3 lg:px-4 py-1.5 rounded-full text-[10px] lg:text-xs uppercase font-bold tracking-wider transition-all ${
                 activeModule === item.id 
                   ? 'bg-primary text-black shadow-[0_0_15px_var(--color-primary)]' 
-                  : 'hover:text-primary hover:bg-white/5'
+                  : 'hover:text-primary hover:bg-black/5'
               }`}
             >
               {item.label}
@@ -110,18 +112,23 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
         </nav>
 
         <div className="flex items-center gap-4">
+           {/* Theme Toggle */}
+           <button onClick={toggleThemeMode} className="p-2 hover:text-primary transition-colors">
+             {themeMode === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+           </button>
+
            {/* Palette Toggle */}
            <div className="relative">
               <button onClick={() => setPaletteOpen(!paletteOpen)} className="p-2 hover:text-primary transition-colors">
                 <Palette size={20} />
               </button>
               {paletteOpen && (
-                <div className="absolute top-full right-0 mt-2 bg-gray-900 border border-gray-700 p-2 rounded-lg w-40 space-y-2 shadow-xl">
+                <div className={`absolute top-full right-0 mt-2 border p-2 rounded-lg w-40 space-y-2 shadow-xl ${themeMode === 'light' ? 'bg-white border-gray-200 text-gray-800' : 'bg-gray-900 border-gray-700 text-white'}`}>
                    {Object.keys(PALETTES).map((p) => (
                       <button
                         key={p}
                         onClick={() => { setPalette(p as PaletteName); setPaletteOpen(false); }}
-                        className="w-full text-left px-2 py-1 text-xs hover:bg-gray-800 rounded flex items-center gap-2"
+                        className={`w-full text-left px-2 py-1 text-xs rounded flex items-center gap-2 ${themeMode === 'light' ? 'hover:bg-gray-100' : 'hover:bg-gray-800'}`}
                       >
                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: PALETTES[p as PaletteName].primary }} />
                          {p.replace('_', ' ')}
@@ -163,7 +170,7 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
       </main>
 
       {/* System Footer Status Bar */}
-      <footer className="fixed bottom-0 left-0 right-0 h-8 bg-black/90 border-t border-gray-800 backdrop-blur flex items-center justify-between px-4 text-[10px] font-mono z-50 text-gray-500 select-none">
+      <footer className={`fixed bottom-0 left-0 right-0 h-8 border-t backdrop-blur flex items-center justify-between px-4 text-[10px] font-mono z-50 select-none ${themeMode === 'light' ? 'bg-white/90 border-gray-300 text-gray-500' : 'bg-black/90 border-gray-800 text-gray-500'}`}>
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1.5 text-primary animate-pulse">
                <div className="w-1.5 h-1.5 rounded-full bg-primary" /> ONLINE
@@ -183,7 +190,7 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
              <div className="flex items-center gap-1">
                 <Battery size={10} /> 100%
              </div>
-             <div className="flex items-center gap-1 text-gray-300">
+             <div className="flex items-center gap-1 opacity-80">
                 <Clock size={10} /> {time}
              </div>
           </div>
@@ -196,13 +203,13 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
              initial={{ y: 100, opacity: 0 }}
              animate={{ y: 0, opacity: 1 }}
              exit={{ y: 100, opacity: 0 }}
-             className="fixed bottom-12 right-8 bg-gray-900 border border-primary p-4 rounded shadow-lg z-50 flex items-center gap-4 max-w-sm"
+             className={`fixed bottom-12 right-8 border border-primary p-4 rounded shadow-lg z-50 flex items-center gap-4 max-w-sm ${themeMode === 'light' ? 'bg-white text-gray-900' : 'bg-gray-900 text-white'}`}
            >
               <div className="text-2xl">{recentAchievement.icon}</div>
               <div>
                  <h4 className="text-primary font-bold text-sm">ACHIEVEMENT UNLOCKED</h4>
-                 <p className="text-white font-bold">{recentAchievement.title}</p>
-                 <p className="text-gray-400 text-xs">{recentAchievement.description}</p>
+                 <p className="font-bold">{recentAchievement.title}</p>
+                 <p className="opacity-60 text-xs">{recentAchievement.description}</p>
               </div>
            </MotionDiv>
         )}
@@ -210,15 +217,15 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
 
       {/* Mobile Menu Overlay */}
       {menuOpen && (
-        <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center space-y-6 md:hidden">
-           <button onClick={() => setMenuOpen(false)} className="absolute top-6 right-6 p-2 text-white">
+        <div className={`fixed inset-0 z-50 flex flex-col items-center justify-center space-y-6 md:hidden ${themeMode === 'light' ? 'bg-white/95' : 'bg-black/95'}`}>
+           <button onClick={() => setMenuOpen(false)} className={`absolute top-6 right-6 p-2 ${themeMode === 'light' ? 'text-black' : 'text-white'}`}>
              <Menu className="rotate-90" />
            </button>
            {NAV_ITEMS.map(item => (
              <button
                key={item.id}
                onClick={() => { onNavigate(item.id); setMenuOpen(false); }}
-               className="text-2xl font-bold uppercase tracking-widest text-white hover:text-primary flex items-center gap-3"
+               className={`text-2xl font-bold uppercase tracking-widest hover:text-primary flex items-center gap-3 ${themeMode === 'light' ? 'text-black' : 'text-white'}`}
              >
                <item.icon size={24} /> {item.label}
              </button>

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { PaletteName, ThemeColors, Achievement } from '../types';
+import { PaletteName, ThemeColors, Achievement, ThemeMode } from '../types';
 import { PALETTES, ACHIEVEMENTS_LIST } from '../constants';
 
 interface SystemContextType {
@@ -18,6 +18,8 @@ interface SystemContextType {
   toggleSound: () => void;
   highScore: number;
   updateHighScore: (score: number) => void;
+  themeMode: ThemeMode;
+  toggleThemeMode: () => void;
 }
 
 const SystemContext = createContext<SystemContextType | undefined>(undefined);
@@ -30,6 +32,7 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [overclocked, setOverclocked] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [highScore, setHighScore] = useState(0);
+  const [themeMode, setThemeMode] = useState<ThemeMode>('dark');
 
   // Load persistence
   useEffect(() => {
@@ -39,6 +42,11 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const savedPalette = localStorage.getItem('issa_os_palette');
     if (savedPalette && PALETTES[savedPalette as PaletteName]) {
       setPaletteState(savedPalette as PaletteName);
+    }
+
+    const savedTheme = localStorage.getItem('issa_os_theme_mode');
+    if (savedTheme === 'light' || savedTheme === 'dark') {
+      setThemeMode(savedTheme);
     }
 
     const savedAch = localStorage.getItem('issa_os_achievements');
@@ -59,7 +67,6 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       if (now - lastTime >= 1000) {
         if (frameCount < 20) { // If FPS < 20
              // console.log("Low performance detected, enabling Pro Mode");
-             // Optional: auto-enable pro mode if really bad, but might be annoying
         }
         frameCount = 0;
         lastTime = now;
@@ -81,12 +88,17 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     localStorage.setItem('issa_os_palette', p);
   };
 
+  const toggleThemeMode = () => {
+    const newMode = themeMode === 'dark' ? 'light' : 'dark';
+    setThemeMode(newMode);
+    localStorage.setItem('issa_os_theme_mode', newMode);
+  };
+
   const unlockAchievement = (id: string) => {
     if (!achievements.includes(id)) {
       const newAch = [...achievements, id];
       setAchievements(newAch);
       localStorage.setItem('issa_os_achievements', JSON.stringify(newAch));
-      // Trigger toast (handled in UI)
     }
   };
 
@@ -99,7 +111,14 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const toggleSound = () => setSoundEnabled(prev => !prev);
 
-  const colors = PALETTES[palette];
+  // Compute final colors based on mode
+  const rawColors = PALETTES[palette];
+  const colors: ThemeColors = {
+    ...rawColors,
+    bg: themeMode === 'light' ? '#f8fafc' : rawColors.bg, // Slate 50 for light mode
+    panel: themeMode === 'light' ? 'rgba(255, 255, 255, 0.85)' : rawColors.panel,
+    text: themeMode === 'light' ? '#0f172a' : rawColors.text, // Slate 900 for light mode
+  };
 
   return (
     <SystemContext.Provider value={{
@@ -109,7 +128,8 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       achievements, unlockAchievement,
       overclocked, setOverclocked,
       soundEnabled, toggleSound,
-      highScore, updateHighScore
+      highScore, updateHighScore,
+      themeMode, toggleThemeMode
     }}>
       {children}
     </SystemContext.Provider>
