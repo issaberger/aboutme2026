@@ -1,8 +1,8 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, HTMLMotionProps } from 'framer-motion';
 import { useSystem } from '../../context/SystemContext';
 
-interface CyberButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface CyberButtonProps extends HTMLMotionProps<"button"> {
   variant?: 'primary' | 'secondary' | 'danger';
   glitch?: boolean;
 }
@@ -35,7 +35,7 @@ const CyberButton: React.FC<CyberButtonProps> = ({
         <span className="absolute top-0 left-[-100%] w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 group-hover:animate-[shimmer_1s_infinite]" />
       )}
       <span className="relative z-10 flex items-center justify-center gap-2">
-        {children}
+        {children as React.ReactNode}
       </span>
       {/* Corner decorations */}
       {!proMode && (

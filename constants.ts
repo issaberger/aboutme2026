@@ -78,7 +78,7 @@ export const PROJECTS: Project[] = [
     title: 'Desktop Support Ticket Resolution',
     category: 'IT Support',
     description: 'High-volume ticket resolution workflow optimization.',
-    image: 'https://images.unsplash.com/photo-1551739451-413a58110588?auto=format&fit=crop&q=80&w=600',
+    image: 'https://robohash.org/DesktopSupportTicketResolution?set=set1&bgset=bg1&size=600x600',
     problem: 'End-users experienced long wait times for Tier 1 support issues, impacting productivity.',
     actions: [
       'Implemented automated categorization for incoming tickets.',
@@ -95,7 +95,7 @@ export const PROJECTS: Project[] = [
     title: 'On-Site Field Support & Hardware Swap',
     category: 'Field Support',
     description: 'Large-scale hardware refresh for enterprise client.',
-    image: 'https://images.unsplash.com/photo-1558494949-ef526b01201b?auto=format&fit=crop&q=80&w=600',
+    image: 'https://robohash.org/OnSiteFieldSupport?set=set1&bgset=bg1&size=600x600',
     problem: 'Client needed to upgrade 50+ workstations over a weekend without disrupting Monday operations.',
     actions: [
       'Coordinated logistics and staging of new units.',
@@ -110,7 +110,7 @@ export const PROJECTS: Project[] = [
     title: 'M365 & User Administration',
     category: 'Cloud Fundamentals',
     description: 'Secure tenant configuration and user onboarding.',
-    image: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&q=80&w=600',
+    image: 'https://robohash.org/M365UserAdministration?set=set1&bgset=bg1&size=600x600',
     problem: 'Inconsistent user permissions and security gaps in existing AD setup.',
     actions: [
       'Audited Active Directory groups and cleaned up stale accounts.',
@@ -126,7 +126,7 @@ export const PROJECTS: Project[] = [
     title: 'Asset Inventory & SLA Compliance',
     category: 'IT Management',
     description: 'Tracking system for hardware lifecycle management.',
-    image: 'https://images.unsplash.com/photo-1507925921958-8a62f3d1a50d?auto=format&fit=crop&q=80&w=600',
+    image: 'https://robohash.org/AssetInventorySLACompliance?set=set1&bgset=bg1&size=600x600',
     problem: 'Lost track of valuable hardware assets and warranty expirations.',
     actions: [
       'Deployed Snipe-IT for asset tracking.',
@@ -141,7 +141,7 @@ export const PROJECTS: Project[] = [
     title: 'Solution Education Platform',
     category: 'Web Design',
     description: 'Educational portal for solutioneducation.net.',
-    image: 'https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?auto=format&fit=crop&q=80&w=600',
+    image: 'https://robohash.org/SolutionEducationPlatform?set=set1&bgset=bg1&size=600x600',
     problem: 'Existing site was non-responsive and difficult to navigate for students.',
     actions: [
       'Redesigned UI using mobile-first principles.',
@@ -157,7 +157,7 @@ export const PROJECTS: Project[] = [
     title: 'Tutoring Workflow System',
     category: 'Systems Support',
     description: 'Scheduling and resource management for SEN tutoring.',
-    image: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&q=80&w=600',
+    image: 'https://robohash.org/TutoringWorkflowSystem?set=set1&bgset=bg1&size=600x600',
     problem: 'Manual scheduling led to conflicts and missed sessions.',
     actions: [
       'Integrated calendar API for automated booking.',

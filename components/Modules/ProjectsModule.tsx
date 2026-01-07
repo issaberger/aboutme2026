@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSystem } from '../../context/SystemContext';
 import { PROJECTS } from '../../constants';
 import { Project } from '../../types';
-import { X, ExternalLink, Cpu, PenTool, BarChart } from 'lucide-react';
+import { X, Cpu, PenTool, BarChart } from 'lucide-react';
 import CyberButton from '../ui/CyberButton';
 
 const ProjectsModule = () => {
@@ -57,7 +57,7 @@ const ProjectsModule = () => {
                    <img 
                      src={project.image} 
                      alt={project.title} 
-                     className="w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-all duration-500 grayscale group-hover:grayscale-0 scale-100 group-hover:scale-105 relative z-10" 
+                     className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-all duration-500 grayscale group-hover:grayscale-0 scale-100 group-hover:scale-105 relative z-10" 
                    />
                    {!proMode && (
                      <>
@@ -177,13 +177,6 @@ const ProjectsModule = () => {
                                          </div>
                                      ))}
                                  </div>
-                             )}
-                             {project.link && (
-                               <a href={project.link} target="_blank" rel="noreferrer" className="block w-full no-underline">
-                                 <CyberButton className="w-full text-xs" variant="primary">
-                                    View Live Demo <ExternalLink size={14} className="ml-2" />
-                                 </CyberButton>
-                               </a>
                              )}
                           </div>
                       </div>
