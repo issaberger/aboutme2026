@@ -6,6 +6,20 @@ import { Project } from '../../types';
 import { X, Cpu, PenTool, BarChart } from 'lucide-react';
 import CyberButton from '../ui/CyberButton';
 
+// Moved Section component to the top to ensure it is defined before usage in ProjectsModule.
+// We make children optional in the type definition to resolve TypeScript errors that sometimes
+// occur when children are passed via nesting rather than as an explicit attribute in certain TS/React environments.
+const Section = ({ title, icon, children }: { title: string, icon: React.ReactNode, children?: React.ReactNode }) => (
+    <div>
+        <h4 className="flex items-center gap-2 text-lg font-bold text-gray-200 mb-2">
+            <span className="text-primary">{icon}</span> {title}
+        </h4>
+        <div className="text-gray-400 text-sm leading-relaxed">
+            {children}
+        </div>
+    </div>
+);
+
 const ProjectsModule = () => {
   const { colors, proMode, unlockAchievement } = useSystem();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -218,16 +232,5 @@ const ProjectsModule = () => {
     </div>
   );
 };
-
-const Section = ({ title, icon, children }: { title: string, icon: React.ReactNode, children: React.ReactNode }) => (
-    <div>
-        <h4 className="flex items-center gap-2 text-lg font-bold text-gray-200 mb-2">
-            <span className="text-primary">{icon}</span> {title}
-        </h4>
-        <div className="text-gray-400 text-sm leading-relaxed">
-            {children}
-        </div>
-    </div>
-);
 
 export default ProjectsModule;

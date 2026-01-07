@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSystem } from '../../context/SystemContext';
-import { Search, ArrowRight, Monitor, Folder, FileText } from 'lucide-react';
+import { Search, ArrowRight, Monitor, Folder, Activity, ShieldCheck, BarChart3 } from 'lucide-react';
 import { PaletteName } from '../../types';
 import { PALETTES } from '../../constants';
 
@@ -22,8 +22,10 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, onNavi
 
   const commands = [
     { id: 'home', label: 'Go to Home', icon: Monitor, action: () => onNavigate('home') },
+    { id: 'dossier', label: 'View Dossier (Bio & Resume)', icon: ShieldCheck, action: () => onNavigate('dossier') },
     { id: 'projects', label: 'View Projects', icon: Folder, action: () => onNavigate('projects') },
-    { id: 'resume', label: 'View Resume', icon: FileText, action: () => onNavigate('resume') },
+    { id: 'intel', label: 'Global Intel Feed', icon: Activity, action: () => onNavigate('intel') },
+    { id: 'market', label: 'Stock Market Terminal', icon: BarChart3, action: () => onNavigate('market') },
     { id: 'toggle-pro', label: 'Toggle Pro Mode', icon: Monitor, action: toggleProMode },
     // Palettes
     ...Object.keys(PALETTES).map(p => ({

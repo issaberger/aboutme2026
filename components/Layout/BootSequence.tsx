@@ -52,9 +52,9 @@ const BootSequence = ({ onComplete }: { onComplete: () => void }) => {
         </div>
         <div className="h-32 font-mono text-xs text-gray-400 overflow-hidden border border-gray-800 p-2 bg-black/50">
            {Array.from({length: 5}).map((_, i) => (
-             <div key={i} className="opacity-50">> {logs[i] || '...'}</div>
+             <div key={i} className="opacity-50">{'>'} {logs[i] || '...'}</div>
            ))}
-           <div className="text-white mt-2">> {text}</div>
+           <div className="text-white mt-2">{'>'} {text}</div>
         </div>
       </div>
       <button 

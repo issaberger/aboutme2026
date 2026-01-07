@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import Shell from './components/Layout/Shell';
 import HomeModule from './components/Modules/HomeModule';
-import AboutModule from './components/Modules/AboutModule';
+import DossierModule from './components/Modules/DossierModule';
 import ProjectsModule from './components/Modules/ProjectsModule';
 import ServicesModule from './components/Modules/ServicesModule';
-import ResumeModule from './components/Modules/ResumeModule';
+import NewsModule from './components/Modules/NewsModule';
+import MarketModule from './components/Modules/MarketModule';
 import ContactModule from './components/Modules/ContactModule';
 import GameModule from './components/Modules/GameModule';
 import CommandPalette from './components/Layout/CommandPalette';
@@ -50,8 +51,8 @@ const App = () => {
     if (!visited.includes(activeModule)) {
        const newVisited = [...visited, activeModule];
        localStorage.setItem('issa_os_pages_visited', JSON.stringify(newVisited));
-       // Assuming 7 main modules (including arcade)
-       if (newVisited.length >= 7) unlockAchievement('explorer');
+       // Now 8 main modules including Market
+       if (newVisited.length >= 8) unlockAchievement('explorer');
     }
   }, [activeModule]);
 
@@ -59,10 +60,11 @@ const App = () => {
     <>
       <Shell activeModule={activeModule} onNavigate={setActiveModule}>
         {activeModule === 'home' && <HomeModule onNavigate={setActiveModule} />}
-        {activeModule === 'about' && <AboutModule />}
+        {activeModule === 'dossier' && <DossierModule />}
         {activeModule === 'projects' && <ProjectsModule />}
         {activeModule === 'services' && <ServicesModule />}
-        {activeModule === 'resume' && <ResumeModule />}
+        {activeModule === 'intel' && <NewsModule />}
+        {activeModule === 'market' && <MarketModule />}
         {activeModule === 'arcade' && <GameModule />}
         {activeModule === 'contact' && <ContactModule />}
       </Shell>

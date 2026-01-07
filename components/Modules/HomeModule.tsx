@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useSystem } from '../../context/SystemContext';
-import { PROFILE } from '../../constants';
+import { PROFILE, NAV_ITEMS } from '../../constants';
 import CyberButton from '../ui/CyberButton';
-import { ArrowRight, FileText, Mail } from 'lucide-react';
+import { ArrowRight, FileText, Mail, Grid } from 'lucide-react';
 
 const HomeModule = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
   const { proMode, colors } = useSystem();
@@ -17,11 +17,11 @@ const HomeModule = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
   }, []);
 
   return (
-    <div className="relative h-full flex flex-col justify-center items-center overflow-hidden p-6">
+    <div className="relative h-full flex flex-col items-center overflow-y-auto overflow-x-hidden p-6">
       
       {/* Background Grid - WebGL Imitation */}
       {!proMode && (
-        <div className="absolute inset-0 z-0 opacity-20 perspective-1000">
+        <div className="fixed inset-0 z-0 opacity-20 perspective-1000 pointer-events-none">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] [transform:rotateX(60deg)_scale(2)] origin-top animate-[pulse-fast_10s_infinite]" />
           <motion.div 
             className="absolute top-1/2 left-1/2 w-[600px] h-[600px] rounded-full blur-[100px]"
@@ -40,16 +40,16 @@ const HomeModule = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
         </div>
       )}
 
-      {/* Main Content */}
-      <div className="relative z-10 max-w-4xl w-full text-center space-y-8">
+      {/* Hero Section */}
+      <div className="relative z-10 max-w-4xl w-full text-center space-y-4 md:space-y-6 pt-10 md:pt-20 shrink-0">
         
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.5 }}
         >
           <h2 className="text-primary font-mono text-sm tracking-[0.5em] mb-4 uppercase">
-            System Online • v2.5.0
+            System Online • v2.5.1
           </h2>
           
           <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-2 relative inline-block">
@@ -65,53 +65,56 @@ const HomeModule = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
             )}
           </h1>
 
-          <div className="h-8 md:h-12 overflow-hidden mt-4">
+          <div className="h-8 md:h-12 overflow-hidden mt-2">
             <motion.p
               key={subtitleIndex}
-              initial={{ y: 40, opacity: 0 }}
+              initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -40, opacity: 0 }}
-              className="text-xl md:text-2xl text-gray-400 font-mono"
+              exit={{ y: -20, opacity: 0 }}
+              className="text-lg md:text-2xl text-gray-400 font-mono"
             >
               {`> ${PROFILE.taglines[subtitleIndex]}`}
             </motion.p>
           </div>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="flex flex-wrap justify-center gap-4 mt-12"
-        >
-          <CyberButton onClick={() => onNavigate('projects')}>
-            Explore Projects <ArrowRight size={18} />
-          </CyberButton>
-          <CyberButton variant="secondary" onClick={() => onNavigate('contact')}>
-            Initialize Comms <Mail size={18} />
-          </CyberButton>
-          <CyberButton variant="secondary" className="opacity-70" onClick={() => onNavigate('resume')}>
-              View Resume <FileText size={18} />
-          </CyberButton>
-        </motion.div>
-
       </div>
 
-      {/* Status Bar */}
-      <motion.div 
+      {/* Module Grid - "Easier Navigation" */}
+      <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1 }}
-        className="absolute bottom-8 left-0 w-full px-8"
+        transition={{ delay: 0.3 }}
+        className="relative z-10 w-full max-w-5xl mt-12 md:mt-20 pb-24"
       >
-        <div className="flex flex-col md:flex-row justify-between items-center text-xs font-mono text-gray-500 border-t border-gray-800 pt-4 max-w-6xl mx-auto">
-          <div className="flex gap-4">
-            <span>LOC: {PROFILE.location}</span>
-            <span className="text-green-500">● AVAILABLE FOR HIRE</span>
-          </div>
-          <div className="mt-2 md:mt-0">
-             LATENCY: 12ms // SECURE CONNECTION
-          </div>
+        <div className="flex items-center gap-2 mb-6 text-gray-500 font-mono text-xs uppercase tracking-widest pl-2">
+           <Grid size={14} /> System Modules
+           <div className="h-[1px] bg-gray-800 flex-1" />
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          {NAV_ITEMS.filter(item => item.id !== 'home').map((item, idx) => (
+             <motion.button
+               key={item.id}
+               onClick={() => onNavigate(item.id)}
+               whileHover={{ scale: 1.02, y: -2 }}
+               whileTap={{ scale: 0.98 }}
+               className="group relative bg-gray-900/40 border border-gray-800 p-4 rounded-lg hover:border-primary/50 hover:bg-gray-800/60 transition-all text-left flex flex-col justify-between h-32 overflow-hidden"
+             >
+                {/* Hover Glow */}
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                
+                <div className="flex justify-between items-start">
+                   <item.icon className="text-gray-500 group-hover:text-primary transition-colors" size={24} />
+                   <ArrowRight size={16} className="text-gray-700 group-hover:text-primary -translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                </div>
+                
+                <div>
+                   <div className="font-bold text-white group-hover:text-primary transition-colors">{item.label}</div>
+                   <div className="text-[10px] text-gray-500 font-mono mt-1 group-hover:text-gray-400">{item.desc}</div>
+                </div>
+             </motion.button>
+          ))}
         </div>
       </motion.div>
 

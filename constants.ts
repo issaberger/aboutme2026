@@ -10,7 +10,14 @@ import {
   Server, 
   Database,
   Cloud,
-  Zap
+  Zap,
+  ShieldCheck,
+  Folder,
+  Layers,
+  Activity,
+  BarChart3,
+  Gamepad2,
+  Send
 } from 'lucide-react';
 
 export const PALETTES: Record<PaletteName, ThemeColors> = {
@@ -50,6 +57,17 @@ export const PALETTES: Record<PaletteName, ThemeColors> = {
     panel: 'rgba(10, 20, 30, 0.8)',
   },
 };
+
+export const NAV_ITEMS = [
+  { id: 'home', label: 'Home', icon: Monitor, desc: 'System Root' },
+  { id: 'dossier', label: 'Dossier', icon: ShieldCheck, desc: 'Bio & Resume' },
+  { id: 'projects', label: 'Projects', icon: Folder, desc: 'Case Studies' },
+  { id: 'services', label: 'Services', icon: Layers, desc: 'Capabilities' },
+  { id: 'intel', label: 'Intel', icon: Activity, desc: 'News Feed' },
+  { id: 'market', label: 'Stocks', icon: BarChart3, desc: 'Market Data' },
+  { id: 'arcade', label: 'Arcade', icon: Gamepad2, desc: 'Simulations' },
+  { id: 'contact', label: 'Contact', icon: Send, desc: 'Transmission' },
+];
 
 export const ACHIEVEMENTS_LIST: Achievement[] = [
   { id: 'explorer', title: 'Explorer', description: 'Visited all system modules.', icon: '🗺️' },

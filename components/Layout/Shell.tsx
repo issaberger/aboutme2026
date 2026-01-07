@@ -2,21 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSystem } from '../../context/SystemContext';
 import { PaletteName, Achievement } from '../../types';
-import { PALETTES, ACHIEVEMENTS_LIST } from '../../constants';
-import { Menu, Palette, Monitor, Terminal, Folder, Layers, FileText, Send, Gamepad2 } from 'lucide-react';
+import { PALETTES, ACHIEVEMENTS_LIST, NAV_ITEMS } from '../../constants';
+import { Menu, Palette, Wifi, Activity, Battery, Clock } from 'lucide-react';
 import Cursor from './Cursor';
 import BootSequence from './BootSequence';
 import MatrixBackground from './MatrixBackground';
-
-const NAV_ITEMS = [
-  { id: 'home', label: 'Home', icon: Monitor },
-  { id: 'about', label: 'About', icon: Terminal },
-  { id: 'projects', label: 'Projects', icon: Folder },
-  { id: 'services', label: 'Services', icon: Layers },
-  { id: 'resume', label: 'Resume', icon: FileText },
-  { id: 'arcade', label: 'Arcade', icon: Gamepad2 },
-  { id: 'contact', label: 'Contact', icon: Send },
-];
 
 interface ShellProps {
   children: React.ReactNode;
@@ -35,6 +25,13 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
   const [menuOpen, setMenuOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [recentAchievement, setRecentAchievement] = useState<Achievement | null>(null);
+  const [time, setTime] = useState(new Date().toLocaleTimeString());
+
+  // Update time for footer
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date().toLocaleTimeString()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Handle achievement toast
   useEffect(() => {
@@ -56,6 +53,10 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
     '--color-accent': colors.accent,
     '--color-bg': colors.bg,
     '--color-panel': colors.panel,
+    '--color-primary-rgb': palette === 'NEON_RAIN' ? '6, 182, 212' : 
+                          palette === 'ACID_JUNGLE' ? '132, 204, 22' :
+                          palette === 'VIOLET_CIRCUIT' ? '139, 92, 246' :
+                          palette === 'RED_ALERT' ? '239, 68, 68' : '56, 189, 248'
   } as React.CSSProperties;
 
   if (!booted) {
@@ -84,7 +85,7 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
           >
             IB
           </div>
-          <span className="hidden md:block font-mono text-xs opacity-60">
+          <span className="hidden lg:block font-mono text-xs opacity-60">
              ISSA_OS // SYSTEM READY
           </span>
         </div>
@@ -94,7 +95,7 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
             <button
               key={item.id}
               onClick={() => onNavigate(item.id)}
-              className={`px-4 py-1.5 rounded-full text-xs uppercase font-bold tracking-wider transition-all ${
+              className={`px-3 lg:px-4 py-1.5 rounded-full text-[10px] lg:text-xs uppercase font-bold tracking-wider transition-all ${
                 activeModule === item.id 
                   ? 'bg-primary text-black shadow-[0_0_15px_var(--color-primary)]' 
                   : 'hover:text-primary hover:bg-white/5'
@@ -130,7 +131,7 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
            {/* Pro Mode Switch */}
            <button 
              onClick={toggleProMode}
-             className={`text-xs font-mono border px-2 py-1 rounded transition-all ${proMode ? 'bg-white text-black border-white' : 'border-gray-600 text-gray-500'}`}
+             className={`text-[10px] md:text-xs font-mono border px-2 py-1 rounded transition-all ${proMode ? 'bg-white text-black border-white' : 'border-gray-600 text-gray-500'}`}
            >
              {proMode ? 'PRO ON' : 'PRO OFF'}
            </button>
@@ -143,20 +144,47 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
       </header>
 
       {/* Main Content Area */}
-      <main className="absolute top-16 bottom-0 left-0 right-0 overflow-hidden z-10">
+      <main className="absolute top-16 bottom-8 left-0 right-0 overflow-hidden z-10">
         <AnimatePresence mode='wait'>
           <motion.div
             key={activeModule}
-            initial={{ opacity: 0, x: 20, filter: 'blur(10px)' }}
+            initial={{ opacity: 0, x: 10, filter: 'blur(5px)' }}
             animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, x: -20, filter: 'blur(10px)' }}
-            transition={{ duration: 0.4, ease: "circOut" }}
+            exit={{ opacity: 0, x: -10, filter: 'blur(5px)' }}
+            transition={{ duration: 0.2, ease: "circOut" }}
             className="h-full w-full"
           >
             {children}
           </motion.div>
         </AnimatePresence>
       </main>
+
+      {/* System Footer Status Bar */}
+      <footer className="fixed bottom-0 left-0 right-0 h-8 bg-black/90 border-t border-gray-800 backdrop-blur flex items-center justify-between px-4 text-[10px] font-mono z-50 text-gray-500 select-none">
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1.5 text-primary animate-pulse">
+               <div className="w-1.5 h-1.5 rounded-full bg-primary" /> ONLINE
+            </span>
+            <span className="hidden md:inline">CPU: 14%</span>
+            <span className="hidden md:inline">MEM: 64TB</span>
+          </div>
+          
+          <div className="absolute left-1/2 -translate-x-1/2 opacity-50 hidden sm:block">
+             © 2025 ISSA BERGER SYSTEMS // ALL RIGHTS RESERVED
+          </div>
+
+          <div className="flex items-center gap-4">
+             <div className="flex items-center gap-1">
+                <Wifi size={10} /> 10Gbps
+             </div>
+             <div className="flex items-center gap-1">
+                <Battery size={10} /> 100%
+             </div>
+             <div className="flex items-center gap-1 text-gray-300">
+                <Clock size={10} /> {time}
+             </div>
+          </div>
+      </footer>
 
       {/* Achievement Toast */}
       <AnimatePresence>
@@ -165,7 +193,7 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
              initial={{ y: 100, opacity: 0 }}
              animate={{ y: 0, opacity: 1 }}
              exit={{ y: 100, opacity: 0 }}
-             className="fixed bottom-8 right-8 bg-gray-900 border border-primary p-4 rounded shadow-lg z-50 flex items-center gap-4 max-w-sm"
+             className="fixed bottom-12 right-8 bg-gray-900 border border-primary p-4 rounded shadow-lg z-50 flex items-center gap-4 max-w-sm"
            >
               <div className="text-2xl">{recentAchievement.icon}</div>
               <div>
@@ -187,9 +215,9 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
              <button
                key={item.id}
                onClick={() => { onNavigate(item.id); setMenuOpen(false); }}
-               className="text-2xl font-bold uppercase tracking-widest text-white hover:text-primary"
+               className="text-2xl font-bold uppercase tracking-widest text-white hover:text-primary flex items-center gap-3"
              >
-               {item.label}
+               <item.icon size={24} /> {item.label}
              </button>
            ))}
         </div>
