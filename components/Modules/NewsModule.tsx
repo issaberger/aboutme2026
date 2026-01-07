@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { GoogleGenAI } from "@google/genai";
 import { useSystem } from '../../context/SystemContext';
-import { ai } from '../../lib/gemini';
 import { Radio, ShieldAlert, Cpu, Globe, Zap, ExternalLink, Loader2, RefreshCw, Activity, Terminal as TerminalIcon, Satellite, Lock } from 'lucide-react';
 import CyberButton from '../ui/CyberButton';
 
@@ -56,6 +56,7 @@ const NewsModule = () => {
     setLoadingStep(0);
     setError(null);
     try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const prompt = `Provide exactly 6 highly impactful and current technology news stories for today related to ${category === 'all' ? 'AI, cybersecurity, emerging tech, and hardware' : category}.
       For each story, provide:
       1. Headline
@@ -64,18 +65,15 @@ const NewsModule = () => {
       4. URL
       Keep the tone professional and slightly technical.`;
 
-      // Use the singleton 'ai' client
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-latest', // Using stable model alias
+        model: 'gemini-3-flash-preview',
         contents: prompt,
         config: {
           tools: [{ googleSearch: {} }],
         },
       });
 
-      // Robust extraction of text
       const text = response.text || "";
-      
       const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
       const sources = chunks.map(c => c.web?.uri).filter(Boolean);
 
@@ -100,7 +98,7 @@ const NewsModule = () => {
       console.error(err);
       setError(err.message?.includes('entity was not found') 
         ? "SIGNAL_BLOCKED: Restricted Access or Invalid Protocol." 
-        : "INTERCEPTION_FAILURE: Unable to establish clear signal. Check API Key.");
+        : "INTERCEPTION_FAILURE: Unable to establish clear signal.");
     } finally {
       setLoading(false);
     }
