@@ -170,7 +170,7 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
           </div>
           
           <div className="absolute left-1/2 -translate-x-1/2 opacity-50 hidden sm:block">
-             © 2025 ISSA BERGER SYSTEMS // ALL RIGHTS RESERVED
+             © 2026 ISSA BERGER SYSTEMS // CREATED BY ISSA BERGER
           </div>
 
           <div className="flex items-center gap-4">
