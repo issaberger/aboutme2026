@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GoogleGenAI } from "@google/genai";
+import { ai } from '../../lib/gemini';
 import { TrendingUp, TrendingDown, DollarSign, Activity, PieChart, BarChart3, RefreshCcw, Lock, Search, Zap, LineChart } from 'lucide-react';
 import CyberButton from '../ui/CyberButton';
 import { useSystem } from '../../context/SystemContext';
@@ -191,7 +191,6 @@ const MarketModule = () => {
     setLoading(true);
     setError(null);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const prompt = `Analyze the current stock market for the ${sector} technology sector. 
       Identify 4 key companies.
       For each company, use Google Search to find:
@@ -206,8 +205,9 @@ const MarketModule = () => {
       NVDA|Nvidia Corp|$145.00|+2.5%|BUY|Breakout above resistance expected.
       `;
 
+      // Use the singleton 'ai' client
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-2.5-flash-latest', // Stable alias
         contents: prompt,
         config: {
           tools: [{ googleSearch: {} }],
@@ -236,7 +236,7 @@ const MarketModule = () => {
 
     } catch (err) {
       console.error(err);
-      setError("CONNECTION LOST: UNABLE TO REACH EXCHANGE SERVERS");
+      setError("CONNECTION LOST: UNABLE TO REACH EXCHANGE SERVERS (Check API Key)");
     } finally {
       setLoading(false);
     }
