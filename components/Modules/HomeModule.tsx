@@ -8,7 +8,7 @@ import { ArrowRight, FileText, Mail, Grid } from 'lucide-react';
 // Fix: Cast motion components to any to avoid TypeScript errors with framer-motion props
 const MotionDiv = motion.div as any;
 const MotionSpan = motion.span as any;
-const MotionP = motion.p as any;
+const MotionH2 = motion.h2 as any;
 const MotionButton = motion.button as any;
 
 const HomeModule = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
@@ -54,9 +54,9 @@ const HomeModule = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="text-primary font-mono text-sm tracking-[0.5em] mb-4 uppercase">
+          <div className="text-primary font-mono text-sm tracking-[0.5em] mb-4 uppercase">
             System Online • v2.5.1
-          </h2>
+          </div>
           
           <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-2 relative inline-block">
             <span className={`relative z-10 ${!proMode ? 'glitch-text' : ''}`} data-text={PROFILE.name}>
@@ -72,7 +72,7 @@ const HomeModule = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
           </h1>
 
           <div className="h-8 md:h-12 overflow-hidden mt-2">
-            <MotionP
+            <MotionH2
               key={subtitleIndex}
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -80,7 +80,7 @@ const HomeModule = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
               className="text-lg md:text-2xl text-gray-400 font-mono"
             >
               {`> ${PROFILE.taglines[subtitleIndex]}`}
-            </MotionP>
+            </MotionH2>
           </div>
         </MotionDiv>
 
