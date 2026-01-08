@@ -30,7 +30,7 @@ const MobileControls = ({ onInput }: { onInput: (dir: { x: number, y: number }) 
   };
 
   return (
-    <div className="absolute bottom-8 right-8 z-40 grid grid-cols-3 gap-3 md:hidden opacity-90 touch-none">
+    <div className="absolute bottom-12 right-6 z-40 grid grid-cols-3 gap-2 md:hidden opacity-80 touch-none select-none">
       <div />
       <button 
         className="w-16 h-16 bg-gray-900/90 border border-gray-600 rounded-2xl flex items-center justify-center active:bg-primary active:text-black active:scale-95 transition-all shadow-lg backdrop-blur-md"
@@ -671,7 +671,12 @@ const CyberPac = ({ onBack }: { onBack: () => void }) => {
     const [lives, setLives] = useState(3);
     const [localHigh, setLocalHigh] = useState(parseInt(localStorage.getItem('issa_os_pac_high') || '0'));
     
-    const SPEED = 0.12; 
+    // Config for Speed
+    const [isMobile, setIsMobile] = useState(false);
+    useEffect(() => {
+        setIsMobile(window.innerWidth < 768);
+    }, []);
+    const SPEED = isMobile ? 0.09 : 0.13; 
 
     const stateRef = useRef({
         grid: [] as number[][],
@@ -894,7 +899,12 @@ const CyberPac = ({ onBack }: { onBack: () => void }) => {
                         }
 
                         if (g.mode === 'frightened') {
-                            g.dir = moves[Math.floor(Math.random() * moves.length)];
+                            // RUN AWAY LOGIC: Choose direction that maximizes distance from player
+                            g.dir = moves.reduce((best, curr) => {
+                                const distBest = (gx + best.x - state.player.x) ** 2 + (gy + best.y - state.player.y) ** 2;
+                                const distCurr = (gx + curr.x - state.player.x) ** 2 + (gy + curr.y - state.player.y) ** 2;
+                                return distCurr > distBest ? curr : best; // > means maximize distance
+                            });
                         } else {
                             g.dir = moves.reduce((best, curr) => {
                                 const dBest = (gx+best.x-tx)**2 + (gy+best.y-ty)**2;
