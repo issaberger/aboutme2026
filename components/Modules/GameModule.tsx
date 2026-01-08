@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useSystem } from '../../context/SystemContext';
 import CyberButton from '../ui/CyberButton';
-import { Trophy, Play, RotateCcw, ArrowLeft, ArrowRight, Keyboard, Gamepad2, X, Target, Zap, ChevronLeft, Hexagon } from 'lucide-react';
+import { Trophy, Play, RotateCcw, ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Keyboard, Gamepad2, X, Target, Zap, ChevronLeft, Hexagon, Ghost } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- SHARED TYPES & UTILS ---
@@ -20,6 +20,43 @@ interface Particle {
   life: number;
   color: string;
 }
+
+// --- SHARED COMPONENTS ---
+const MobileControls = ({ onInput }: { onInput: (dir: { x: number, y: number }) => void }) => {
+  return (
+    <div className="absolute bottom-8 right-8 z-30 grid grid-cols-3 gap-2 md:hidden opacity-80">
+      <div />
+      <button 
+        className="w-14 h-14 bg-gray-800/80 border border-gray-600 rounded-lg flex items-center justify-center active:bg-primary active:text-black transition-colors"
+        onPointerDown={(e) => { e.preventDefault(); onInput({ x: 0, y: -1 }); }}
+      >
+        <ArrowUp size={24} />
+      </button>
+      <div />
+      
+      <button 
+        className="w-14 h-14 bg-gray-800/80 border border-gray-600 rounded-lg flex items-center justify-center active:bg-primary active:text-black transition-colors"
+        onPointerDown={(e) => { e.preventDefault(); onInput({ x: -1, y: 0 }); }}
+      >
+        <ArrowLeft size={24} />
+      </button>
+      
+      <button 
+        className="w-14 h-14 bg-gray-800/80 border border-gray-600 rounded-lg flex items-center justify-center active:bg-primary active:text-black transition-colors"
+        onPointerDown={(e) => { e.preventDefault(); onInput({ x: 0, y: 1 }); }}
+      >
+        <ArrowDown size={24} />
+      </button>
+      
+      <button 
+        className="w-14 h-14 bg-gray-800/80 border border-gray-600 rounded-lg flex items-center justify-center active:bg-primary active:text-black transition-colors"
+        onPointerDown={(e) => { e.preventDefault(); onInput({ x: 1, y: 0 }); }}
+      >
+        <ArrowRight size={24} />
+      </button>
+    </div>
+  );
+};
 
 // --- PACKET RUNNER GAME ---
 const PacketRunner = ({ onBack }: { onBack: () => void }) => {
@@ -672,6 +709,17 @@ const NeuralSnake = ({ onBack }: { onBack: () => void }) => {
     setGameState('PLAYING');
   };
 
+  // Input Handling
+  const handleInput = (dir: { x: number, y: number }) => {
+      if (gameState !== 'PLAYING') return;
+      const state = stateRef.current;
+      // Prevent reversing
+      if (dir.x !== 0 && state.direction.x !== 0) return;
+      if (dir.y !== 0 && state.direction.y !== 0) return;
+      
+      state.nextDirection = dir;
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -768,11 +816,10 @@ const NeuralSnake = ({ onBack }: { onBack: () => void }) => {
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
         if (gameState !== 'PLAYING') return;
-        const state = stateRef.current;
-        if ((e.key === 'ArrowUp' || e.key === 'w') && state.direction.y === 0) state.nextDirection = { x: 0, y: -1 };
-        if ((e.key === 'ArrowDown' || e.key === 's') && state.direction.y === 0) state.nextDirection = { x: 0, y: 1 };
-        if ((e.key === 'ArrowLeft' || e.key === 'a') && state.direction.x === 0) state.nextDirection = { x: -1, y: 0 };
-        if ((e.key === 'ArrowRight' || e.key === 'd') && state.direction.x === 0) state.nextDirection = { x: 1, y: 0 };
+        if (e.key === 'ArrowUp' || e.key === 'w') handleInput({ x: 0, y: -1 });
+        if (e.key === 'ArrowDown' || e.key === 's') handleInput({ x: 0, y: 1 });
+        if (e.key === 'ArrowLeft' || e.key === 'a') handleInput({ x: -1, y: 0 });
+        if (e.key === 'ArrowRight' || e.key === 'd') handleInput({ x: 1, y: 0 });
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
@@ -807,14 +854,412 @@ const NeuralSnake = ({ onBack }: { onBack: () => void }) => {
                <CyberButton variant="secondary" onClick={startGame}><RotateCcw size={18} /> RESTART</CyberButton>
            </div>
        )}
+
+       {/* Mobile Controls */}
+       {gameState === 'PLAYING' && <MobileControls onInput={handleInput} />}
     </div>
   );
+};
+
+// --- CYBER PAC GAME ---
+const PAC_GRID = [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,1],
+    [1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,2,1,1,2,1],
+    [1,3,1,1,2,1,1,1,2,1,1,2,1,1,1,2,1,1,3,1],
+    [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+    [1,2,1,1,2,1,2,1,1,1,1,1,1,2,1,2,1,1,2,1],
+    [1,2,2,2,2,1,2,2,2,1,1,2,2,2,1,2,2,2,2,1],
+    [1,1,1,1,2,1,1,1,0,1,1,0,1,1,1,2,1,1,1,1],
+    [0,0,0,1,2,1,0,0,0,0,0,0,0,0,1,2,1,0,0,0],
+    [1,1,1,1,2,1,0,1,1,0,0,1,1,0,1,2,1,1,1,1],
+    [1,0,0,0,2,0,0,1,0,0,0,0,1,0,0,2,0,0,0,1],
+    [1,1,1,1,2,1,0,1,1,1,1,1,1,0,1,2,1,1,1,1],
+    [0,0,0,1,2,1,0,0,0,0,0,0,0,0,1,2,1,0,0,0],
+    [1,1,1,1,2,1,2,1,1,1,1,1,1,2,1,2,1,1,1,1],
+    [1,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,1],
+    [1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,2,1,1,2,1],
+    [1,3,2,1,2,2,2,2,2,0,0,2,2,2,2,2,1,2,3,1],
+    [1,1,2,1,2,1,2,1,1,1,1,1,1,2,1,2,1,2,1,1],
+    [1,2,2,2,2,1,2,2,2,1,1,2,2,2,1,2,2,2,2,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+];
+
+const CyberPac = ({ onBack }: { onBack: () => void }) => {
+    const { colors, updateHighScore } = useSystem();
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [gameState, setGameState] = useState<'START' | 'PLAYING' | 'GAME_OVER' | 'WIN'>('START');
+    const [score, setScore] = useState(0);
+    const [lives, setLives] = useState(3);
+    const [localHigh, setLocalHigh] = useState(parseInt(localStorage.getItem('issa_os_pac_high') || '0'));
+    
+    // Game constants
+    const TILE_SIZE = 20; // Will be scaled dynamically
+    const SPEED = 0.15; // Grid cells per frame approx
+
+    const stateRef = useRef({
+        grid: JSON.parse(JSON.stringify(PAC_GRID)), // Deep copy
+        player: { x: 9.5, y: 16, dir: { x: -1, y: 0 }, nextDir: { x: -1, y: 0 }, mouth: 0, mouthOpen: true },
+        ghosts: [
+            { x: 9.5, y: 8, color: '#ff0000', dir: { x: 0, y: 0 }, type: 'chase', mode: 'scatter' }, // Red
+            { x: 8.5, y: 10, color: '#ffb8ae', dir: { x: 0, y: -1 }, type: 'ambush', mode: 'scatter' }, // Pink
+            { x: 10.5, y: 10, color: '#00ffff', dir: { x: 0, y: -1 }, type: 'patrol', mode: 'scatter' }, // Cyan
+            { x: 9.5, y: 10, color: '#ffb852', dir: { x: 0, y: -1 }, type: 'random', mode: 'scatter' } // Orange
+        ],
+        score: 0,
+        powerModeTime: 0,
+        gameTime: 0
+    });
+
+    const resetLevel = (fullReset = false) => {
+        const state = stateRef.current;
+        if (fullReset) {
+            state.grid = JSON.parse(JSON.stringify(PAC_GRID));
+            state.score = 0;
+            setScore(0);
+            setLives(3);
+        }
+        state.player = { x: 9.5, y: 16, dir: { x: -1, y: 0 }, nextDir: { x: -1, y: 0 }, mouth: 0, mouthOpen: true };
+        state.ghosts = [
+            { x: 9.5, y: 8, color: '#ff0000', dir: { x: 1, y: 0 }, type: 'chase', mode: 'scatter' },
+            { x: 8.5, y: 10, color: '#ffb8ae', dir: { x: -1, y: 0 }, type: 'ambush', mode: 'scatter' },
+            { x: 10.5, y: 10, color: '#00ffff', dir: { x: 1, y: 0 }, type: 'patrol', mode: 'scatter' },
+            { x: 9.5, y: 10, color: '#ffb852', dir: { x: -1, y: 0 }, type: 'random', mode: 'scatter' }
+        ];
+        state.powerModeTime = 0;
+    };
+
+    const startGame = () => {
+        resetLevel(true);
+        setGameState('PLAYING');
+    };
+
+    const handleInput = (dir: { x: number, y: number }) => {
+        if (gameState !== 'PLAYING') return;
+        stateRef.current.player.nextDir = dir;
+    };
+
+    useEffect(() => {
+        const handleKey = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowUp' || e.key === 'w') handleInput({ x: 0, y: -1 });
+            if (e.key === 'ArrowDown' || e.key === 's') handleInput({ x: 0, y: 1 });
+            if (e.key === 'ArrowLeft' || e.key === 'a') handleInput({ x: -1, y: 0 });
+            if (e.key === 'ArrowRight' || e.key === 'd') handleInput({ x: 1, y: 0 });
+        };
+        window.addEventListener('keydown', handleKey);
+        return () => window.removeEventListener('keydown', handleKey);
+    }, [gameState]);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        let animationFrameId: number;
+
+        const checkCollision = (x: number, y: number) => {
+            const gridX = Math.floor(x);
+            const gridY = Math.floor(y);
+            
+            // Bounds check
+            if (gridY < 0 || gridY >= PAC_GRID.length || gridX < 0 || gridX >= PAC_GRID[0].length) {
+                // Wrap around tunnel
+                if (gridX < 0) return { type: 'tunnel', dest: { x: PAC_GRID[0].length - 1, y } };
+                if (gridX >= PAC_GRID[0].length) return { type: 'tunnel', dest: { x: 0, y } };
+                return { type: 'wall' };
+            }
+
+            return { type: stateRef.current.grid[gridY][gridX] === 1 ? 'wall' : 'space' };
+        };
+
+        const render = (time: number) => {
+            if (gameState !== 'PLAYING') return;
+
+            // Update Game Logic
+            const state = stateRef.current;
+            state.gameTime += 1;
+            
+            // Power Mode Timer
+            if (state.powerModeTime > 0) {
+                state.powerModeTime--;
+                if (state.powerModeTime <= 0) {
+                   state.ghosts.forEach(g => g.mode = 'chase');
+                }
+            } else {
+                // Ghost AI Mode Switching (Simple Wave)
+                const waveTime = (state.gameTime % 1200); // 20 sec cycle
+                const newMode = waveTime < 900 ? 'chase' : 'scatter';
+                state.ghosts.forEach(g => { if (g.mode !== 'frightened') g.mode = newMode });
+            }
+
+            // --- Player Movement ---
+            const p = state.player;
+            
+            // Attempt turn
+            if (p.nextDir.x !== 0 || p.nextDir.y !== 0) {
+                 const centerX = Math.floor(p.x) + 0.5;
+                 const centerY = Math.floor(p.y) + 0.5;
+                 const distToCenter = Math.sqrt((p.x - centerX)**2 + (p.y - centerY)**2);
+                 
+                 if (distToCenter < 0.15) { // Can turn near center of tile
+                     const check = checkCollision(p.x + p.nextDir.x * 0.6, p.y + p.nextDir.y * 0.6);
+                     if (check.type !== 'wall') {
+                         p.x = centerX;
+                         p.y = centerY;
+                         p.dir = p.nextDir;
+                         p.nextDir = { x: 0, y: 0 };
+                     }
+                 }
+            }
+
+            // Move
+            const nextX = p.x + p.dir.x * SPEED;
+            const nextY = p.y + p.dir.y * SPEED;
+            const collision = checkCollision(nextX + p.dir.x * 0.4, nextY + p.dir.y * 0.4);
+
+            if (collision.type === 'tunnel') {
+                p.x = collision.dest!.x;
+            } else if (collision.type !== 'wall') {
+                p.x = nextX;
+                p.y = nextY;
+            }
+
+            // Eat
+            const gx = Math.floor(p.x);
+            const gy = Math.floor(p.y);
+            if (gy >= 0 && gy < 20 && gx >= 0 && gx < 20) {
+                const cell = state.grid[gy][gx];
+                if (cell === 2) {
+                    state.grid[gy][gx] = 0;
+                    state.score += 10;
+                    setScore(state.score);
+                } else if (cell === 3) {
+                    state.grid[gy][gx] = 0;
+                    state.score += 50;
+                    state.powerModeTime = 600; // 10 seconds at 60fps
+                    state.ghosts.forEach(g => g.mode = 'frightened');
+                    setScore(state.score);
+                }
+            }
+
+            // Win Condition
+            if (!state.grid.some((row: number[]) => row.includes(2) || row.includes(3))) {
+                setGameState('WIN');
+                updateHighScore(state.score);
+            }
+
+            // --- Ghost AI & Movement ---
+            state.ghosts.forEach(g => {
+                const gSpeed = g.mode === 'frightened' ? SPEED * 0.6 : SPEED * 0.95;
+                
+                // Align to grid center to decide turns
+                const centerX = Math.floor(g.x) + 0.5;
+                const centerY = Math.floor(g.y) + 0.5;
+                const dist = Math.sqrt((g.x - centerX)**2 + (g.y - centerY)**2);
+
+                if (dist < 0.15) {
+                    g.x = centerX;
+                    g.y = centerY;
+
+                    // Decision Logic
+                    const possibleDirs = [
+                        { x: 0, y: -1 }, { x: 0, y: 1 }, { x: -1, y: 0 }, { x: 1, y: 0 }
+                    ].filter(d => {
+                        // Don't reverse immediately
+                        if (d.x === -g.dir.x && d.y === -g.dir.y) return false;
+                        const c = checkCollision(g.x + d.x, g.y + d.y);
+                        return c.type !== 'wall';
+                    });
+
+                    if (possibleDirs.length > 0) {
+                        let target = { x: p.x, y: p.y };
+                        
+                        if (g.mode === 'scatter') {
+                            // Corners
+                            if (g.type === 'chase') target = { x: 1, y: 1 };
+                            else if (g.type === 'ambush') target = { x: 18, y: 1 };
+                            else if (g.type === 'patrol') target = { x: 1, y: 18 };
+                            else target = { x: 18, y: 18 };
+                        } else if (g.mode === 'frightened') {
+                            // Random
+                            g.dir = possibleDirs[Math.floor(Math.random() * possibleDirs.length)];
+                            return; 
+                        }
+
+                        // Select dir that minimizes dist to target
+                        g.dir = possibleDirs.reduce((best, current) => {
+                             const distBest = (g.x + best.x - target.x)**2 + (g.y + best.y - target.y)**2;
+                             const distCurr = (g.x + current.x - target.x)**2 + (g.y + current.y - target.y)**2;
+                             return distCurr < distBest ? current : best;
+                        });
+                    } else {
+                        // Dead end (shouldn't happen in standard map but good fallback)
+                        g.dir = { x: -g.dir.x, y: -g.dir.y };
+                    }
+                }
+
+                g.x += g.dir.x * gSpeed;
+                g.y += g.dir.y * gSpeed;
+
+                // Wrap
+                if (g.x < -0.5) g.x = 19.5;
+                if (g.x > 19.5) g.x = -0.5;
+            });
+
+            // --- Ghost Collision ---
+            state.ghosts.forEach(g => {
+                const dist = Math.sqrt((p.x - g.x)**2 + (p.y - g.y)**2);
+                if (dist < 0.8) {
+                    if (g.mode === 'frightened') {
+                        // Eat Ghost
+                        g.x = 9.5;
+                        g.y = 9;
+                        g.mode = 'scatter';
+                        state.score += 200;
+                        setScore(state.score);
+                    } else {
+                        // Die
+                        if (lives > 1) {
+                            setLives(prev => prev - 1);
+                            resetLevel(false);
+                        } else {
+                            setGameState('GAME_OVER');
+                            updateHighScore(state.score);
+                            if (state.score > localHigh) {
+                                setLocalHigh(state.score);
+                                localStorage.setItem('issa_os_pac_high', state.score.toString());
+                            }
+                        }
+                    }
+                }
+            });
+
+            // --- Rendering ---
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            const scale = Math.min(canvas.width / 20, canvas.height / 20);
+            const offsetX = (canvas.width - scale * 20) / 2;
+            const offsetY = (canvas.height - scale * 20) / 2;
+
+            ctx.fillStyle = colors.bg;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.translate(offsetX, offsetY);
+            ctx.scale(scale, scale);
+
+            // Draw Map
+            state.grid.forEach((row: number[], y: number) => {
+                row.forEach((cell, x) => {
+                    if (cell === 1) {
+                        ctx.fillStyle = '#1e293b'; // Wall color
+                        ctx.strokeStyle = colors.primary;
+                        ctx.lineWidth = 0.1;
+                        ctx.fillRect(x, y, 1, 1);
+                        ctx.strokeRect(x, y, 1, 1);
+                    } else if (cell === 2) {
+                        ctx.fillStyle = '#fbbf24'; // Dot
+                        ctx.beginPath();
+                        ctx.arc(x + 0.5, y + 0.5, 0.15, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else if (cell === 3) {
+                        ctx.fillStyle = '#fff'; // Power
+                        ctx.shadowBlur = 5;
+                        ctx.shadowColor = '#fff';
+                        ctx.beginPath();
+                        ctx.arc(x + 0.5, y + 0.5, 0.3, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                    }
+                });
+            });
+
+            // Draw Player
+            ctx.fillStyle = '#fbbf24'; // Yellow
+            ctx.beginPath();
+            const angle = Math.atan2(p.dir.y, p.dir.x);
+            const mouthSize = 0.2 * Math.sin(time * 0.01) + 0.2;
+            ctx.arc(p.x, p.y, 0.4, angle + mouthSize, angle - mouthSize + Math.PI * 2);
+            ctx.lineTo(p.x, p.y);
+            ctx.fill();
+
+            // Draw Ghosts
+            state.ghosts.forEach(g => {
+                ctx.fillStyle = g.mode === 'frightened' ? '#3b82f6' : g.color;
+                ctx.beginPath();
+                ctx.arc(g.x, g.y, 0.4, Math.PI, 0);
+                ctx.lineTo(g.x + 0.4, g.y + 0.4);
+                ctx.lineTo(g.x - 0.4, g.y + 0.4);
+                ctx.fill();
+                // Eyes
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(g.x - 0.15, g.y - 0.1, 0.12, 0, Math.PI * 2);
+                ctx.arc(g.x + 0.15, g.y - 0.1, 0.12, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            animationFrameId = requestAnimationFrame(render);
+        };
+
+        animationFrameId = requestAnimationFrame(render);
+        return () => cancelAnimationFrame(animationFrameId);
+    }, [gameState, colors, lives]);
+
+    return (
+        <div className="h-full w-full relative overflow-hidden select-none font-mono">
+            <canvas ref={canvasRef} className="w-full h-full block" />
+            
+            <button onClick={onBack} className="absolute top-4 left-4 z-20 p-2 bg-black/50 border border-gray-700 rounded text-gray-400 hover:text-white hover:border-white">
+                <ChevronLeft />
+            </button>
+
+            <div className="absolute top-4 right-4 z-20 text-right pointer-events-none">
+                <div className="flex gap-4">
+                    <div>
+                        <div className="text-[10px] text-gray-400">LIVES</div>
+                        <div className="text-xl font-bold text-red-500 flex gap-1 justify-end">{Array(lives).fill('♥').join('')}</div>
+                    </div>
+                    <div>
+                        <div className="text-[10px] text-gray-400">SCORE</div>
+                        <div className="text-xl font-black text-white">{score.toString().padStart(6, '0')}</div>
+                    </div>
+                </div>
+            </div>
+
+            {gameState === 'START' && (
+                <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center p-6 text-center z-10 backdrop-blur-sm">
+                    <h1 className="text-4xl md:text-6xl font-black text-yellow-400 mb-2">CYBER PAC</h1>
+                    <p className="text-sm text-gray-400 mb-8 max-w-md">Consume all data nodes. Avoid security daemons. Power nodes allow counter-attack.</p>
+                    <CyberButton onClick={startGame}><Play size={18} /> INITIALIZE</CyberButton>
+                </div>
+            )}
+
+            {gameState === 'GAME_OVER' && (
+                <div className="absolute inset-0 bg-red-900/60 flex flex-col items-center justify-center p-6 text-center z-10 backdrop-blur-md">
+                    <h2 className="text-red-300 font-bold mb-2 animate-pulse">PROCESS TERMINATED</h2>
+                    <div className="text-4xl font-black text-white mb-6">SCORE: {score}</div>
+                    <CyberButton variant="secondary" onClick={startGame}><RotateCcw size={18} /> RETRY</CyberButton>
+                </div>
+            )}
+             {gameState === 'WIN' && (
+                <div className="absolute inset-0 bg-green-900/60 flex flex-col items-center justify-center p-6 text-center z-10 backdrop-blur-md">
+                    <h2 className="text-green-300 font-bold mb-2 animate-pulse">SYSTEM CLEARED</h2>
+                    <div className="text-4xl font-black text-white mb-6">SCORE: {score}</div>
+                    <CyberButton variant="primary" onClick={startGame}><RotateCcw size={18} /> NEXT LEVEL</CyberButton>
+                </div>
+            )}
+
+            {/* Mobile Controls */}
+            {gameState === 'PLAYING' && <MobileControls onInput={handleInput} />}
+        </div>
+    );
 };
 
 // --- MAIN MODULE & MENU ---
 const GameModule = () => {
   const { colors } = useSystem();
-  const [activeGame, setActiveGame] = useState<'MENU' | 'RUNNER' | 'TYPER' | 'SNAKE'>('MENU');
+  const [activeGame, setActiveGame] = useState<'MENU' | 'RUNNER' | 'TYPER' | 'SNAKE' | 'PACMAN'>('MENU');
 
   return (
     <div className="h-full w-full relative bg-bg">
@@ -827,7 +1272,7 @@ const GameModule = () => {
                 <h2 className="text-3xl md:text-5xl font-black text-white mb-2 tracking-tighter">ARCADE <span className="text-primary">NEXUS</span></h2>
                 <p className="text-gray-500 mb-12 font-mono text-sm">SELECT SIMULATION PROTOCOL</p>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl w-full">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl w-full">
                     {/* Runner */}
                     <button 
                        onClick={() => setActiveGame('RUNNER')}
@@ -838,10 +1283,10 @@ const GameModule = () => {
                         <div className="relative z-10 p-8 flex-1 flex flex-col items-center justify-center">
                             <Gamepad2 size={48} className="text-gray-700 group-hover:text-primary mb-4 transition-colors" />
                             <h3 className="text-xl font-bold text-white group-hover:text-primary">PACKET RUNNER</h3>
-                            <p className="text-gray-500 text-xs mt-2 text-center px-4">Infinite runner. Dodge firewalls. Reflex test.</p>
+                            <p className="text-gray-500 text-xs mt-2 text-center px-4">Infinite runner. Dodge firewalls.</p>
                         </div>
                         <div className="relative z-10 p-3 border-t border-gray-800 bg-black/40 flex justify-between items-center text-[10px] font-mono text-gray-500 group-hover:text-white">
-                            <span>DIFFICULTY: MED</span>
+                            <span>DIFF: MED</span>
                             <Play size={12} />
                         </div>
                     </button>
@@ -856,10 +1301,10 @@ const GameModule = () => {
                         <div className="relative z-10 p-8 flex-1 flex flex-col items-center justify-center">
                             <Keyboard size={48} className="text-gray-700 group-hover:text-secondary mb-4 transition-colors" />
                             <h3 className="text-xl font-bold text-white group-hover:text-secondary">NEURAL TYPER</h3>
-                            <p className="text-gray-500 text-xs mt-2 text-center px-4">Data defense. Type to destroy. Speed typing.</p>
+                            <p className="text-gray-500 text-xs mt-2 text-center px-4">Data defense. Type to destroy.</p>
                         </div>
                         <div className="relative z-10 p-3 border-t border-gray-800 bg-black/40 flex justify-between items-center text-[10px] font-mono text-gray-500 group-hover:text-white">
-                            <span>DIFFICULTY: HARD</span>
+                            <span>DIFF: HARD</span>
                             <Play size={12} />
                         </div>
                     </button>
@@ -874,10 +1319,28 @@ const GameModule = () => {
                         <div className="relative z-10 p-8 flex-1 flex flex-col items-center justify-center">
                             <Hexagon size={48} className="text-gray-700 group-hover:text-accent mb-4 transition-colors" />
                             <h3 className="text-xl font-bold text-white group-hover:text-accent">NEURAL SNAKE</h3>
-                            <p className="text-gray-500 text-xs mt-2 text-center px-4">Collect bits. Expand your tail. Classic reimagined.</p>
+                            <p className="text-gray-500 text-xs mt-2 text-center px-4">Harvest bits. Classic reimagined.</p>
                         </div>
                         <div className="relative z-10 p-3 border-t border-gray-800 bg-black/40 flex justify-between items-center text-[10px] font-mono text-gray-500 group-hover:text-white">
-                            <span>DIFFICULTY: EASY</span>
+                            <span>DIFF: EASY</span>
+                            <Play size={12} />
+                        </div>
+                    </button>
+
+                     {/* Pacman */}
+                     <button 
+                       onClick={() => setActiveGame('PACMAN')}
+                       className="group relative h-64 bg-gray-900 border border-gray-800 rounded-xl overflow-hidden hover:border-yellow-500 transition-all text-left flex flex-col"
+                    >
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0),rgba(0,0,0,0.8))]" />
+                        <div className="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#eab308_1px,transparent_1px),linear-gradient(to_bottom,#eab308_1px,transparent_1px)] bg-[size:30px_30px]" />
+                        <div className="relative z-10 p-8 flex-1 flex flex-col items-center justify-center">
+                            <Ghost size={48} className="text-gray-700 group-hover:text-yellow-500 mb-4 transition-colors" />
+                            <h3 className="text-xl font-bold text-white group-hover:text-yellow-500">CYBER PAC</h3>
+                            <p className="text-gray-500 text-xs mt-2 text-center px-4">Maze chase. Eat dots. Avoid daemons.</p>
+                        </div>
+                        <div className="relative z-10 p-3 border-t border-gray-800 bg-black/40 flex justify-between items-center text-[10px] font-mono text-gray-500 group-hover:text-white">
+                            <span>DIFF: HARD</span>
                             <Play size={12} />
                         </div>
                     </button>
@@ -900,6 +1363,12 @@ const GameModule = () => {
          {activeGame === 'SNAKE' && (
              <motion.div className="h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                  <NeuralSnake onBack={() => setActiveGame('MENU')} />
+             </motion.div>
+         )}
+         
+         {activeGame === 'PACMAN' && (
+             <motion.div className="h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                 <CyberPac onBack={() => setActiveGame('MENU')} />
              </motion.div>
          )}
        </AnimatePresence>
