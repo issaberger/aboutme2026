@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useSystem } from '../../context/SystemContext';
 import CyberButton from '../ui/CyberButton';
-import { Play, RotateCcw, ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Keyboard, Gamepad2, ChevronLeft, Hexagon, Ghost, Brain, Check, X as XIcon, Timer, Scan, Box, Activity } from 'lucide-react';
+import { Play, RotateCcw, ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Keyboard, Gamepad2, ChevronLeft, Hexagon, Ghost, Brain, Check, X as XIcon, Timer, Scan, Box, Activity, Crosshair, ZoomIn, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- SHARED CONSTANTS ---
@@ -104,195 +104,203 @@ const MobileControls = ({ onInput }: { onInput: (dir: { x: number, y: number }) 
   );
 };
 
-// --- BIO SCANNER 3D GAME ---
-interface Point3D { x: number, y: number, z: number }
-interface Edge { start: number, end: number }
-interface Mesh { id: string, name: string, vertices: Point3D[], edges: Edge[] }
+// --- BIO SCANNER PRO 3D ENGINE ---
+interface Point3D { x: number, y: number, z: number, r?: number, color?: string }
+interface Model3D { id: string, name: string, points: Point3D[], type: 'organ' | 'system' | 'skeletal' }
 
 const BioScanner = ({ onBack }: { onBack: () => void }) => {
-    const { colors, updateTriviaHighScore, triviaHighScore } = useSystem(); // Reuse trivia high score for simplicity or create new
+    const { colors } = useSystem();
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [gameState, setGameState] = useState<'MENU' | 'SCANNING' | 'RESULT'>('MENU');
+    const [gameState, setGameState] = useState<'MENU' | 'SCANNING' | 'ANALYSIS' | 'COMPLETE'>('MENU');
     const [currentModelIndex, setCurrentModelIndex] = useState(0);
     const [score, setScore] = useState(0);
-    const [timeLeft, setTimeLeft] = useState(20);
+    const [anomalyDetected, setAnomalyDetected] = useState(false);
+    const [scanProgress, setScanProgress] = useState(0);
+    const [streak, setStreak] = useState(0);
     
-    // 3D Engine State
+    // Engine State
     const rotationRef = useRef({ x: 0, y: 0 });
+    const targetRotationRef = useRef({ x: 0, y: 0 });
+    const zoomRef = useRef(1);
     const isDraggingRef = useRef(false);
     const lastMouseRef = useRef({ x: 0, y: 0 });
+    const anomalyPosRef = useRef({ x: 0, y: 0, z: 0 }); // Local space position of anomaly
+
+    // --- PROCEDURAL MODEL GENERATORS (HIGH FIDELITY) ---
+    // Uses parametric equations to generate dense point clouds
     
-    // Procedural Mesh Generators
-    const generateSphere = (radius: number, rings: number, segments: number): Mesh => {
-        const vertices: Point3D[] = [];
-        const edges: Edge[] = [];
-        
-        for (let i = 0; i <= rings; i++) {
-            const v = i / rings;
-            const phi = v * Math.PI;
-            for (let j = 0; j <= segments; j++) {
-                const u = j / segments;
-                const theta = u * Math.PI * 2;
-                const x = radius * Math.sin(phi) * Math.cos(theta);
-                const y = radius * Math.cos(phi);
-                const z = radius * Math.sin(phi) * Math.sin(theta);
-                vertices.push({ x, y, z });
-            }
+    const generateHeart = (): Point3D[] => {
+        const points: Point3D[] = [];
+        const numPoints = 3000;
+        for(let i=0; i<numPoints; i++) {
+            const t = Math.random() * Math.PI * 2;
+            const u = Math.random() * Math.PI;
+            // Cardioid-like 3D shape
+            const x = 16 * Math.pow(Math.sin(u), 3) * Math.sin(t);
+            const y = (13 * Math.cos(u) - 5 * Math.cos(2*u) - 2 * Math.cos(3*u) - Math.cos(4*u));
+            const z = 16 * Math.pow(Math.sin(u), 3) * Math.cos(t);
+            // Add internal volume noise
+            const scale = 3 + Math.random() * 0.5;
+            points.push({ x: x*scale, y: -y*scale, z: z*scale, r: Math.random() > 0.9 ? 2 : 1 });
         }
-        // Generate edges (horizontal and vertical)
-        for (let i = 0; i < rings; i++) {
-            for (let j = 0; j < segments; j++) {
-                const current = i * (segments + 1) + j;
-                const next = current + 1;
-                const below = (i + 1) * (segments + 1) + j;
-                edges.push({ start: current, end: next });
-                edges.push({ start: current, end: below });
-            }
-        }
-        return { id: 'skull', name: 'CRANIUM', vertices, edges };
+        return points;
     };
 
-    const generateRibcage = (): Mesh => {
-        const vertices: Point3D[] = [];
-        const edges: Edge[] = [];
-        const ribs = 8;
-        
-        // Spine
-        for(let i=0; i<=ribs; i++) {
-            vertices.push({x: 0, y: -40 + i*10, z: 20});
-            if(i>0) edges.push({start: i-1, end: i});
-        }
-        
-        // Ribs
-        for(let i=0; i<ribs; i++) {
-            const y = -30 + i*10;
-            const width = 30 - Math.abs(i-3)*3; 
-            const depth = 25;
-            const segs = 12;
-            const startIdx = vertices.length;
+    const generateBrain = (): Point3D[] => {
+        const points: Point3D[] = [];
+        const numPoints = 4000;
+        for(let i=0; i<numPoints; i++) {
+            // Deformed sphere
+            const u = Math.random() * Math.PI * 2;
+            const v = Math.random() * Math.PI;
+            const rBase = 60;
+            // Noise function simulation for gyri/sulci
+            const noise = Math.sin(u*6) * Math.cos(v*6) * 5;
+            const r = rBase + noise + (Math.random() * 2);
             
-            for(let j=0; j<segs; j++) {
-                const theta = (j / (segs-1)) * Math.PI * 1.5 - 0.75 * Math.PI; // Front arc
-                vertices.push({
-                    x: Math.cos(theta) * width,
-                    y: y + Math.sin(theta)*5,
-                    z: Math.sin(theta) * depth
+            // Hemisphere separation
+            let x = r * Math.sin(v) * Math.cos(u);
+            if (Math.abs(x) < 2) x *= 0.2; // Longitudinal fissure
+
+            const y = r * Math.cos(v);
+            const z = r * Math.sin(v) * Math.sin(u) * 1.2; // Elongated
+            
+            points.push({ x, y, z });
+        }
+        return points;
+    };
+
+    const generateSpine = (): Point3D[] => {
+        const points: Point3D[] = [];
+        const vertebrae = 12;
+        for(let v=0; v<vertebrae; v++) {
+            const yBase = -100 + v * 18;
+            // Vertebra body (Cylinder-ish)
+            for(let i=0; i<150; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const r = 15 + Math.random() * 5;
+                const h = (Math.random() - 0.5) * 10;
+                points.push({ 
+                    x: Math.cos(angle) * r, 
+                    y: yBase + h, 
+                    z: Math.sin(angle) * r 
                 });
-                if(j > 0) edges.push({start: vertices.length-2, end: vertices.length-1});
             }
-            // Connect to spine roughly
-            edges.push({start: i, end: startIdx + Math.floor(segs/2)});
+            // Spinous process (Spike back)
+            for(let i=0; i<50; i++) {
+                points.push({
+                    x: (Math.random()-0.5) * 5,
+                    y: yBase + (Math.random()-0.5)*5,
+                    z: -20 - Math.random() * 15
+                });
+            }
         }
-        
-        return { id: 'ribs', name: 'THORAX', vertices, edges };
+        return points;
     };
 
-    const generateDNA = (): Mesh => {
-        const vertices: Point3D[] = [];
-        const edges: Edge[] = [];
-        const len = 40;
-        const radius = 20;
-        const turns = 3;
-        
-        for(let i=0; i<=len; i++) {
-            const y = -50 + (i/len)*100;
-            const theta = (i/len) * Math.PI * 2 * turns;
-            
-            // Strand 1
-            vertices.push({ x: Math.cos(theta)*radius, y, z: Math.sin(theta)*radius });
-            // Strand 2
-            vertices.push({ x: Math.cos(theta + Math.PI)*radius, y, z: Math.sin(theta + Math.PI)*radius });
-            
-            const idx = vertices.length-2;
-            if (i > 0) {
-                edges.push({ start: idx-2, end: idx }); // Connect strand 1
-                edges.push({ start: idx-1, end: idx+1 }); // Connect strand 2
+    const generateHelix = (): Point3D[] => {
+        const points: Point3D[] = [];
+        const len = 400;
+        for(let i=0; i<len; i++) {
+            const y = -100 + (i/len)*200;
+            const angle = (i/len) * Math.PI * 8;
+            const r = 30;
+            // Strand A
+            points.push({ x: Math.cos(angle)*r, y, z: Math.sin(angle)*r, color: '#06b6d4' });
+            // Strand B
+            points.push({ x: Math.cos(angle + Math.PI)*r, y, z: Math.sin(angle + Math.PI)*r, color: '#d946ef' });
+            // Connectors
+            if(i % 10 === 0) {
+                for(let j=0; j<20; j++) {
+                    const f = j/20;
+                    points.push({
+                        x: Math.cos(angle)*r*(1-f) + Math.cos(angle+Math.PI)*r*f,
+                        y: y,
+                        z: Math.sin(angle)*r*(1-f) + Math.sin(angle+Math.PI)*r*f,
+                        r: 0.5
+                    });
+                }
             }
-            // Ladder step
-            if (i % 2 === 0) edges.push({ start: idx, end: idx+1 });
         }
-        
-        return { id: 'dna', name: 'HELIX_DNA', vertices, edges };
+        return points;
     };
 
-    const generateHand = (): Mesh => {
-        const vertices: Point3D[] = [];
-        const edges: Edge[] = [];
-        
-        // Palm (Box)
-        const palmW = 20, palmH = 25, palmD = 5;
-        const palmVerts = [
-            {x:-palmW, y:-palmH, z:0}, {x:palmW, y:-palmH, z:0}, {x:palmW, y:palmH, z:0}, {x:-palmW, y:palmH, z:0}
-        ];
-        palmVerts.forEach(v => vertices.push(v));
-        edges.push({start:0,end:1}, {start:1,end:2}, {start:2,end:3}, {start:3,end:0});
-        
-        // Fingers
-        const fingerLen = 30;
-        [-15, -5, 5, 15].forEach((xOffset, i) => {
-             const baseIdx = vertices.length;
-             vertices.push({ x: xOffset, y: -palmH, z: 0 });
-             vertices.push({ x: xOffset, y: -palmH - fingerLen + (i===0 || i===3 ? 5 : 0), z: 0 }); // Varied length
-             edges.push({ start: baseIdx, end: baseIdx+1 });
-             // Connect to palm
-             edges.push({ start: i, end: baseIdx }); // Simplified connection
+    const generateSkull = (): Point3D[] => {
+        const points: Point3D[] = [];
+        // Cranium sphere
+        for(let i=0; i<1500; i++) {
+            const u = Math.random() * Math.PI * 2;
+            const v = Math.random() * Math.PI * 0.7; // Top dome
+            const r = 50 + Math.random();
+            points.push({ x: r*Math.sin(v)*Math.cos(u), y: -20 + r*Math.cos(v), z: r*Math.sin(v)*Math.sin(u) * 1.2 });
+        }
+        // Jaw / Face box approximation
+        for(let i=0; i<800; i++) {
+            points.push({
+                x: (Math.random()-0.5) * 50,
+                y: 20 + Math.random() * 40,
+                z: 20 + Math.random() * 30
+            });
+        }
+        // Eye sockets
+        const holes = [{x: -15, y: 0}, {x: 15, y: 0}];
+        return points.filter(p => {
+            // Remove points near eyes
+            if (p.z > 30 && p.y > -10 && p.y < 10) {
+                if (Math.abs(p.x - 15) < 8 || Math.abs(p.x + 15) < 8) return false;
+            }
+            return true;
         });
-        
-        // Thumb
-        const thumbBase = vertices.length;
-        vertices.push({x: palmW, y: 0, z: 0});
-        vertices.push({x: palmW + 15, y: -10, z: 10});
-        edges.push({start: thumbBase, end: thumbBase+1});
-        edges.push({start: 1, end: thumbBase});
-
-        return { id: 'hand', name: 'METACARPAL', vertices, edges };
     };
 
-    const meshes = useMemo(() => [
-        generateSphere(40, 12, 12),
-        generateRibcage(),
-        generateDNA(),
-        generateHand()
+    const models: Model3D[] = useMemo(() => [
+        { id: 'heart', name: 'CARDIAC CORE', points: generateHeart(), type: 'organ' },
+        { id: 'brain', name: 'NEURAL CORTEX', points: generateBrain(), type: 'organ' },
+        { id: 'dna', name: 'HELIX STRAND', points: generateHelix(), type: 'system' },
+        { id: 'spine', name: 'VERTEBRAL COLUMN', points: generateSpine(), type: 'skeletal' },
+        { id: 'skull', name: 'CRANIUM ASSEMBLY', points: generateSkull(), type: 'skeletal' }
     ], []);
 
-    // Game Logic
-    const startGame = () => {
-        setScore(0);
-        setCurrentModelIndex(Math.floor(Math.random() * meshes.length));
-        setTimeLeft(20);
-        setGameState('SCANNING');
-        rotationRef.current = { x: 0, y: 0 };
-    };
+    // Pick a random anomaly location on mount/change
+    useEffect(() => {
+        if (gameState === 'SCANNING') {
+            const pts = models[currentModelIndex].points;
+            const randomPt = pts[Math.floor(Math.random() * pts.length)];
+            // Store anomaly location
+            anomalyPosRef.current = { ...randomPt };
+            setAnomalyDetected(false);
+            setScanProgress(0);
+            rotationRef.current = { x: 0, y: 0 };
+            targetRotationRef.current = { x: 0, y: 0 };
+        }
+    }, [gameState, currentModelIndex, models]);
 
-    const handleIdentify = (name: string) => {
-        if (name === meshes[currentModelIndex].name) {
-            setScore(s => s + 500 + timeLeft * 10);
-            // Next round
-            const next = (currentModelIndex + 1 + Math.floor(Math.random()*(meshes.length-1))) % meshes.length;
-            setCurrentModelIndex(next);
-            setTimeLeft(20); // Reset timer
+    // Game Logic
+    const scanTick = () => {
+        if (anomalyDetected) {
+            setScanProgress(p => {
+                if (p >= 100) {
+                    handleSuccess();
+                    return 100;
+                }
+                return p + 2;
+            });
         } else {
-            // Wrong answer penalty
-            setTimeLeft(t => Math.max(0, t - 5));
+            setScanProgress(p => Math.max(0, p - 5));
         }
     };
 
-    // Timer
-    useEffect(() => {
-        if (gameState !== 'SCANNING') return;
-        const timer = setInterval(() => {
-            setTimeLeft(prev => {
-                if (prev <= 0) {
-                    setGameState('RESULT');
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-        return () => clearInterval(timer);
-    }, [gameState]);
+    const handleSuccess = () => {
+        setScore(s => s + 1000 + (streak * 200));
+        setStreak(s => s + 1);
+        setGameState('ANALYSIS');
+        setTimeout(() => {
+            setCurrentModelIndex(prev => (prev + 1) % models.length);
+            setGameState('SCANNING');
+        }, 2000);
+    };
 
-    // 3D Rendering Loop
+    // Rendering Loop
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -300,103 +308,136 @@ const BioScanner = ({ onBack }: { onBack: () => void }) => {
         if (!ctx) return;
 
         let frameId: number;
-        const perspective = 400;
+        const perspective = 500;
         
-        const render = (time: number) => {
-            if (gameState !== 'SCANNING') return;
-            
-            // Auto rotate slightly if not interacting
-            if (!isDraggingRef.current) {
-                rotationRef.current.y += 0.005;
-            }
-
+        const render = () => {
             const width = canvas.width = canvas.offsetWidth;
             const height = canvas.height = canvas.offsetHeight;
             const cx = width / 2;
             const cy = height / 2;
 
-            ctx.fillStyle = '#050505'; // Match BG
+            // Interpolate rotation for smoothness
+            rotationRef.current.x += (targetRotationRef.current.x - rotationRef.current.x) * 0.1;
+            rotationRef.current.y += (targetRotationRef.current.y - rotationRef.current.y) * 0.1;
+
+            // Auto rotate slowly if idle
+            if (!isDraggingRef.current && !anomalyDetected) {
+                targetRotationRef.current.y += 0.002;
+            }
+
+            // Clear
+            ctx.fillStyle = '#020202';
             ctx.fillRect(0, 0, width, height);
 
-            // Draw Grid (Floor)
-            ctx.strokeStyle = '#111';
-            ctx.lineWidth = 1;
-            // ... (Simple grid logic could go here, omitting for performance focus on mesh)
-
-            const mesh = meshes[currentModelIndex];
-            
-            // Rotation Math
+            // 3D Math Setup
             const cosX = Math.cos(rotationRef.current.x);
             const sinX = Math.sin(rotationRef.current.x);
             const cosY = Math.cos(rotationRef.current.y);
             const sinY = Math.sin(rotationRef.current.y);
 
-            const projectedVerts = mesh.vertices.map(v => {
-                // Rotate Y
-                let x = v.x * cosY - v.z * sinY;
-                let z = v.z * cosY + v.x * sinY;
-                // Rotate X
-                let y = v.y * cosX - z * sinX;
-                z = z * cosX + v.y * sinX;
+            const currentPoints = models[currentModelIndex].points;
+            let visiblePoints = 0;
 
-                // Project
-                const scale = perspective / (perspective + z + 200); // +200 to push back
-                return {
-                    x: x * scale + cx,
-                    y: y * scale + cy,
-                    scale
-                };
-            });
-
-            // Draw Edges
-            ctx.beginPath();
-            ctx.strokeStyle = colors.primary; // '#06b6d4'
-            ctx.lineWidth = 1.5;
-            ctx.lineCap = 'round';
+            // Anomaly Check Logic
+            // Project anomaly position
+            const ax = anomalyPosRef.current.x;
+            const ay = anomalyPosRef.current.y;
+            const az = anomalyPosRef.current.z;
             
-            mesh.edges.forEach(edge => {
-                const p1 = projectedVerts[edge.start];
-                const p2 = projectedVerts[edge.end];
-                // Simple clipping
-                if (p1.scale > 0 && p2.scale > 0) {
-                    ctx.moveTo(p1.x, p1.y);
-                    ctx.lineTo(p2.x, p2.y);
-                }
-            });
-            ctx.stroke();
+            // Rotate Anomaly
+            let ay1 = ay * cosX - az * sinX;
+            let az1 = az * cosX + ay * sinX;
+            let ax2 = ax * cosY - az1 * sinY;
+            let az2 = az1 * cosY + ax * sinY;
+            
+            // Check if anomaly is "front facing" (z > 0 means closer to camera in this coord system usually, but let's say z > 0)
+            // And mostly centered
+            const isCentered = Math.abs(ax2) < 30 && Math.abs(ay1) < 30 && az2 > 0;
+            setAnomalyDetected(isCentered);
 
-            // Draw Vertices (Glow effect)
-            ctx.fillStyle = '#fff';
-            projectedVerts.forEach((p, i) => {
-                // Only draw some vertices to reduce noise, or all for "point cloud" feel
-                if (i % 2 === 0) { 
-                    const size = 2 * p.scale;
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, size, 0, Math.PI*2);
-                    ctx.fill();
-                }
-            });
+            // RENDER POINTS
+            // Optimization: Z-sort not strictly necessary for point clouds if we use additive blending or simple draw order
+            // But let's just draw.
+            
+            for (let i = 0; i < currentPoints.length; i += 1) { // Render all points
+                const p = currentPoints[i];
+                
+                // Rotation X
+                let y = p.y * cosX - p.z * sinX;
+                let z = p.z * cosX + p.y * sinX;
+                
+                // Rotation Y
+                let x = p.x * cosY - z * sinY;
+                z = z * cosY + p.x * sinY;
 
-            // Scanline Effect
-            const scanY = (time * 0.1) % height;
-            ctx.fillStyle = `rgba(${parseInt(colors.primary.slice(1,3),16)}, ${parseInt(colors.primary.slice(3,5),16)}, ${parseInt(colors.primary.slice(5,7),16)}, 0.1)`;
-            ctx.fillRect(0, scanY, width, 10);
+                // Push back
+                z += 300; 
 
+                if (z < 10) continue; // Near clip
+
+                const scale = (perspective / z) * zoomRef.current;
+                const x2d = x * scale + cx;
+                const y2d = y * scale + cy;
+
+                // Depth shading
+                const alpha = Math.min(1, Math.max(0.1, (scale * 0.5)));
+                
+                ctx.fillStyle = p.color || colors.primary;
+                ctx.globalAlpha = alpha;
+                
+                const size = (p.r || 1.5) * scale * 0.5;
+                ctx.beginPath();
+                ctx.arc(x2d, y2d, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw Anomaly Highlight if close
+            if (isCentered || scanProgress > 0) {
+                const scale = (perspective / (az2 + 300)) * zoomRef.current;
+                const anomX = ax2 * scale + cx;
+                const anomY = ay1 * scale + cy;
+
+                ctx.strokeStyle = '#ef4444';
+                ctx.lineWidth = 2;
+                ctx.globalAlpha = 0.8;
+                
+                // Pulse effect
+                const pulse = Math.sin(Date.now() / 100) * 5 + 10;
+                ctx.beginPath();
+                ctx.arc(anomX, anomY, pulse * scale, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Crosshair
+                ctx.beginPath();
+                ctx.moveTo(anomX - 20, anomY); ctx.lineTo(anomX + 20, anomY);
+                ctx.moveTo(anomX, anomY - 20); ctx.lineTo(anomX, anomY + 20);
+                ctx.stroke();
+                
+                // Text
+                ctx.fillStyle = '#ef4444';
+                ctx.font = '10px monospace';
+                ctx.fillText('ANOMALY DETECTED', anomX + 15, anomY - 15);
+            }
+
+            // Scanline Overlay
+            ctx.fillStyle = `rgba(${parseInt(colors.primary.slice(1,3),16)}, ${parseInt(colors.primary.slice(3,5),16)}, ${parseInt(colors.primary.slice(5,7),16)}, 0.05)`;
+            ctx.fillRect(0, (Date.now() / 5) % height, width, 2);
+
+            ctx.globalAlpha = 1;
+            scanTick();
             frameId = requestAnimationFrame(render);
         };
 
-        if (gameState === 'SCANNING') {
+        if (gameState === 'SCANNING' || gameState === 'ANALYSIS') {
             frameId = requestAnimationFrame(render);
         } else {
-            // Static clear
-            ctx.fillStyle = '#050505';
-            ctx.fillRect(0,0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
 
         return () => cancelAnimationFrame(frameId);
-    }, [gameState, currentModelIndex, colors]);
+    }, [gameState, currentModelIndex, colors, anomalyDetected]);
 
-    // Controls
+    // Input Handlers
     const handleStart = (e: React.MouseEvent | React.TouchEvent) => {
         isDraggingRef.current = true;
         const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
@@ -412,21 +453,20 @@ const BioScanner = ({ onBack }: { onBack: () => void }) => {
         const dx = clientX - lastMouseRef.current.x;
         const dy = clientY - lastMouseRef.current.y;
         
-        rotationRef.current.y += dx * 0.01;
-        rotationRef.current.x += dy * 0.01;
+        targetRotationRef.current.y += dx * 0.01;
+        targetRotationRef.current.x += dy * 0.01;
         
         lastMouseRef.current = { x: clientX, y: clientY };
     };
 
-    const handleEnd = () => {
-        isDraggingRef.current = false;
-    };
+    const handleEnd = () => isDraggingRef.current = false;
 
     return (
         <div className="h-full w-full relative overflow-hidden bg-black flex flex-col font-mono select-none">
+            {/* 3D Canvas Layer */}
             <canvas 
                 ref={canvasRef} 
-                className="absolute inset-0 w-full h-full cursor-move touch-none"
+                className="absolute inset-0 w-full h-full cursor-crosshair touch-none z-10"
                 onMouseDown={handleStart}
                 onMouseMove={handleMove}
                 onMouseUp={handleEnd}
@@ -436,76 +476,93 @@ const BioScanner = ({ onBack }: { onBack: () => void }) => {
                 onTouchEnd={handleEnd}
             />
             
-            <button onClick={onBack} className="absolute top-4 left-4 z-20 p-2 bg-black/50 border border-gray-700 rounded text-gray-400 hover:text-white"><ChevronLeft /></button>
+            <button onClick={onBack} className="absolute top-4 left-4 z-50 p-2 bg-black/50 border border-gray-700 rounded text-gray-400 hover:text-white"><ChevronLeft /></button>
 
+            {/* Menu State */}
             {gameState === 'MENU' && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm z-30 p-6 text-center">
-                    <Scan size={64} className="text-primary mb-4 animate-pulse" />
-                    <h1 className="text-4xl md:text-5xl font-black text-white mb-2 tracking-tighter">BIO-<span className="text-primary">SCAN</span></h1>
-                    <p className="text-gray-400 mb-8 max-w-sm text-sm">Analyze 3D biological anomalies. Rotate model to identify structure.</p>
-                    <CyberButton onClick={startGame}><Play size={18} /> INITIALIZE SCAN</CyberButton>
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md z-50 p-6 text-center">
+                    <div className="w-24 h-24 border border-primary/30 rounded-full flex items-center justify-center mb-6 relative animate-spin-slow">
+                        <div className="w-20 h-20 border-t-2 border-primary rounded-full" />
+                    </div>
+                    <Scan size={64} className="text-primary absolute mb-6" />
+                    <h1 className="text-5xl md:text-7xl font-black text-white mb-2 tracking-tighter">BIO<span className="text-primary">SCAN</span></h1>
+                    <div className="flex gap-4 text-xs font-mono text-gray-500 mb-8 uppercase tracking-widest">
+                        <span>Volumetric Analysis</span>
+                        <span>•</span>
+                        <span>Pathology Hunt</span>
+                    </div>
+                    <CyberButton onClick={() => setGameState('SCANNING')}><Play size={18} /> INITIALIZE SEQUENCE</CyberButton>
                 </div>
             )}
 
-            {gameState === 'SCANNING' && (
-                <>
-                    {/* HUD Overlay */}
-                    <div className="absolute top-4 right-4 z-20 text-right pointer-events-none">
-                        <div className="text-xs text-gray-500">SCORE</div>
-                        <div className="text-2xl font-black text-white">{score}</div>
-                    </div>
-                    
-                    <div className="absolute top-20 left-4 z-10 pointer-events-none opacity-50 hidden md:block">
-                        <div className="border-l-2 border-primary pl-2 mb-4">
-                            <div className="text-[10px] text-primary">ROTATION_X</div>
-                            <div className="text-sm font-bold text-white">{rotationRef.current.x.toFixed(2)}</div>
-                        </div>
-                        <div className="border-l-2 border-primary pl-2">
-                            <div className="text-[10px] text-primary">ROTATION_Y</div>
-                            <div className="text-sm font-bold text-white">{rotationRef.current.y.toFixed(2)}</div>
+            {/* HUD Layer */}
+            {(gameState === 'SCANNING' || gameState === 'ANALYSIS') && (
+                <div className="absolute inset-0 z-20 pointer-events-none">
+                    {/* Top Stats */}
+                    <div className="absolute top-4 right-4 text-right">
+                        <div className="flex flex-col gap-1">
+                            <div className="bg-gray-900/80 backdrop-blur border border-gray-700 px-4 py-2 rounded">
+                                <div className="text-[10px] text-gray-500 uppercase">Score</div>
+                                <div className="text-2xl font-black text-white tabular-nums">{score.toString().padStart(6, '0')}</div>
+                            </div>
+                            <div className="bg-gray-900/80 backdrop-blur border border-gray-700 px-4 py-2 rounded flex justify-between items-center gap-4">
+                                <div className="text-[10px] text-gray-500 uppercase">Target</div>
+                                <div className="text-sm font-bold text-primary animate-pulse">{models[currentModelIndex].name}</div>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Timer Bar */}
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gray-900 z-30">
-                        <motion.div 
-                            className="h-full bg-primary"
-                            initial={{ width: '100%' }}
-                            animate={{ width: `${(timeLeft / 20) * 100}%` }}
-                            transition={{ ease: "linear", duration: 0.5 }}
-                        />
-                    </div>
+                    {/* Bottom Status Bar */}
+                    <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black via-black/90 to-transparent">
+                        <div className="flex justify-between items-end max-w-4xl mx-auto">
+                            <div className="hidden md:block">
+                                <div className="text-[10px] text-gray-500 mb-1">ROTATION MATRIX</div>
+                                <div className="flex gap-4 text-xs font-mono text-primary/70">
+                                    <span>X: {targetRotationRef.current.x.toFixed(2)}</span>
+                                    <span>Y: {targetRotationRef.current.y.toFixed(2)}</span>
+                                </div>
+                            </div>
 
-                    {/* Bottom Controls */}
-                    <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black via-black/80 to-transparent z-20">
-                        <div className="text-center mb-4 text-xs text-primary animate-pulse">IDENTIFY BIOLOGICAL STRUCTURE</div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 max-w-2xl mx-auto">
-                            {['CRANIUM', 'THORAX', 'HELIX_DNA', 'METACARPAL'].map(name => (
-                                <button
-                                    key={name}
-                                    onClick={() => handleIdentify(name)}
-                                    className="p-3 border border-gray-700 bg-gray-900/80 hover:bg-primary/20 hover:border-primary text-white text-xs font-bold rounded transition-all backdrop-blur-md active:scale-95"
-                                >
-                                    {name}
-                                </button>
-                            ))}
+                            {/* Scan Progress Central */}
+                            <div className="flex-1 max-w-md mx-auto text-center">
+                                <div className="mb-2 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2">
+                                    {anomalyDetected ? <span className="text-red-500 animate-pulse">LOCKING ON...</span> : <span className="text-gray-500">SEARCHING FOR ANOMALY...</span>}
+                                </div>
+                                <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden border border-gray-700">
+                                    <motion.div 
+                                        className={`h-full ${anomalyDetected ? 'bg-red-500' : 'bg-primary'}`}
+                                        animate={{ width: `${scanProgress}%` }}
+                                        transition={{ ease: 'linear', duration: 0.1 }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="hidden md:block text-right">
+                                <div className="text-[10px] text-gray-500 mb-1">SYSTEM STATUS</div>
+                                <div className="text-xs font-bold text-green-500">ONLINE</div>
+                            </div>
                         </div>
                     </div>
-                </>
-            )}
 
-            {gameState === 'RESULT' && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md z-30 p-6 text-center">
-                    <Activity size={48} className="text-red-500 mb-4" />
-                    <h2 className="text-3xl font-black text-white mb-2">SCAN COMPLETE</h2>
-                    <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500 mb-8">{score}</div>
-                    <div className="grid grid-cols-2 gap-4 max-w-xs mx-auto mb-8 text-sm">
-                         <div className="bg-gray-800 p-3 rounded border border-gray-700">
-                             <div className="text-gray-500 text-xs">STATUS</div>
-                             <div className="font-bold text-primary">TERMINATED</div>
-                         </div>
-                    </div>
-                    <CyberButton onClick={startGame} variant="secondary"><RotateCcw size={18} /> REBOOT SYSTEM</CyberButton>
+                    {/* Analysis Overlay */}
+                    <AnimatePresence>
+                        {gameState === 'ANALYSIS' && (
+                            <motion.div 
+                                initial={{ opacity: 0 }} 
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="absolute inset-0 bg-primary/10 flex items-center justify-center backdrop-blur-sm"
+                            >
+                                <div className="bg-black/90 border border-primary p-8 rounded-lg text-center max-w-sm mx-4">
+                                    <Activity size={48} className="text-primary mx-auto mb-4 animate-bounce" />
+                                    <h2 className="text-2xl font-black text-white mb-2">SCAN COMPLETE</h2>
+                                    <p className="text-gray-400 text-sm mb-4">Biological anomaly isolated and neutralized.</p>
+                                    <div className="text-3xl font-mono font-bold text-white mb-2">+{1000 + streak * 200} PTS</div>
+                                    <div className="text-xs text-primary uppercase tracking-widest">Loading Next Subject...</div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             )}
         </div>
