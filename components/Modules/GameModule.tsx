@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useSystem } from '../../context/SystemContext';
 import CyberButton from '../ui/CyberButton';
-import { Play, RotateCcw, ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Keyboard, Gamepad2, ChevronLeft, Hexagon, Ghost, Brain, Check, X as XIcon, Timer } from 'lucide-react';
+import { Play, RotateCcw, ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Keyboard, Gamepad2, ChevronLeft, Hexagon, Ghost, Brain, Check, X as XIcon, Timer, Scan, Box, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- SHARED CONSTANTS ---
@@ -102,6 +102,414 @@ const MobileControls = ({ onInput }: { onInput: (dir: { x: number, y: number }) 
       </button>
     </div>
   );
+};
+
+// --- BIO SCANNER 3D GAME ---
+interface Point3D { x: number, y: number, z: number }
+interface Edge { start: number, end: number }
+interface Mesh { id: string, name: string, vertices: Point3D[], edges: Edge[] }
+
+const BioScanner = ({ onBack }: { onBack: () => void }) => {
+    const { colors, updateTriviaHighScore, triviaHighScore } = useSystem(); // Reuse trivia high score for simplicity or create new
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [gameState, setGameState] = useState<'MENU' | 'SCANNING' | 'RESULT'>('MENU');
+    const [currentModelIndex, setCurrentModelIndex] = useState(0);
+    const [score, setScore] = useState(0);
+    const [timeLeft, setTimeLeft] = useState(20);
+    
+    // 3D Engine State
+    const rotationRef = useRef({ x: 0, y: 0 });
+    const isDraggingRef = useRef(false);
+    const lastMouseRef = useRef({ x: 0, y: 0 });
+    
+    // Procedural Mesh Generators
+    const generateSphere = (radius: number, rings: number, segments: number): Mesh => {
+        const vertices: Point3D[] = [];
+        const edges: Edge[] = [];
+        
+        for (let i = 0; i <= rings; i++) {
+            const v = i / rings;
+            const phi = v * Math.PI;
+            for (let j = 0; j <= segments; j++) {
+                const u = j / segments;
+                const theta = u * Math.PI * 2;
+                const x = radius * Math.sin(phi) * Math.cos(theta);
+                const y = radius * Math.cos(phi);
+                const z = radius * Math.sin(phi) * Math.sin(theta);
+                vertices.push({ x, y, z });
+            }
+        }
+        // Generate edges (horizontal and vertical)
+        for (let i = 0; i < rings; i++) {
+            for (let j = 0; j < segments; j++) {
+                const current = i * (segments + 1) + j;
+                const next = current + 1;
+                const below = (i + 1) * (segments + 1) + j;
+                edges.push({ start: current, end: next });
+                edges.push({ start: current, end: below });
+            }
+        }
+        return { id: 'skull', name: 'CRANIUM', vertices, edges };
+    };
+
+    const generateRibcage = (): Mesh => {
+        const vertices: Point3D[] = [];
+        const edges: Edge[] = [];
+        const ribs = 8;
+        
+        // Spine
+        for(let i=0; i<=ribs; i++) {
+            vertices.push({x: 0, y: -40 + i*10, z: 20});
+            if(i>0) edges.push({start: i-1, end: i});
+        }
+        
+        // Ribs
+        for(let i=0; i<ribs; i++) {
+            const y = -30 + i*10;
+            const width = 30 - Math.abs(i-3)*3; 
+            const depth = 25;
+            const segs = 12;
+            const startIdx = vertices.length;
+            
+            for(let j=0; j<segs; j++) {
+                const theta = (j / (segs-1)) * Math.PI * 1.5 - 0.75 * Math.PI; // Front arc
+                vertices.push({
+                    x: Math.cos(theta) * width,
+                    y: y + Math.sin(theta)*5,
+                    z: Math.sin(theta) * depth
+                });
+                if(j > 0) edges.push({start: vertices.length-2, end: vertices.length-1});
+            }
+            // Connect to spine roughly
+            edges.push({start: i, end: startIdx + Math.floor(segs/2)});
+        }
+        
+        return { id: 'ribs', name: 'THORAX', vertices, edges };
+    };
+
+    const generateDNA = (): Mesh => {
+        const vertices: Point3D[] = [];
+        const edges: Edge[] = [];
+        const len = 40;
+        const radius = 20;
+        const turns = 3;
+        
+        for(let i=0; i<=len; i++) {
+            const y = -50 + (i/len)*100;
+            const theta = (i/len) * Math.PI * 2 * turns;
+            
+            // Strand 1
+            vertices.push({ x: Math.cos(theta)*radius, y, z: Math.sin(theta)*radius });
+            // Strand 2
+            vertices.push({ x: Math.cos(theta + Math.PI)*radius, y, z: Math.sin(theta + Math.PI)*radius });
+            
+            const idx = vertices.length-2;
+            if (i > 0) {
+                edges.push({ start: idx-2, end: idx }); // Connect strand 1
+                edges.push({ start: idx-1, end: idx+1 }); // Connect strand 2
+            }
+            // Ladder step
+            if (i % 2 === 0) edges.push({ start: idx, end: idx+1 });
+        }
+        
+        return { id: 'dna', name: 'HELIX_DNA', vertices, edges };
+    };
+
+    const generateHand = (): Mesh => {
+        const vertices: Point3D[] = [];
+        const edges: Edge[] = [];
+        
+        // Palm (Box)
+        const palmW = 20, palmH = 25, palmD = 5;
+        const palmVerts = [
+            {x:-palmW, y:-palmH, z:0}, {x:palmW, y:-palmH, z:0}, {x:palmW, y:palmH, z:0}, {x:-palmW, y:palmH, z:0}
+        ];
+        palmVerts.forEach(v => vertices.push(v));
+        edges.push({start:0,end:1}, {start:1,end:2}, {start:2,end:3}, {start:3,end:0});
+        
+        // Fingers
+        const fingerLen = 30;
+        [-15, -5, 5, 15].forEach((xOffset, i) => {
+             const baseIdx = vertices.length;
+             vertices.push({ x: xOffset, y: -palmH, z: 0 });
+             vertices.push({ x: xOffset, y: -palmH - fingerLen + (i===0 || i===3 ? 5 : 0), z: 0 }); // Varied length
+             edges.push({ start: baseIdx, end: baseIdx+1 });
+             // Connect to palm
+             edges.push({ start: i, end: baseIdx }); // Simplified connection
+        });
+        
+        // Thumb
+        const thumbBase = vertices.length;
+        vertices.push({x: palmW, y: 0, z: 0});
+        vertices.push({x: palmW + 15, y: -10, z: 10});
+        edges.push({start: thumbBase, end: thumbBase+1});
+        edges.push({start: 1, end: thumbBase});
+
+        return { id: 'hand', name: 'METACARPAL', vertices, edges };
+    };
+
+    const meshes = useMemo(() => [
+        generateSphere(40, 12, 12),
+        generateRibcage(),
+        generateDNA(),
+        generateHand()
+    ], []);
+
+    // Game Logic
+    const startGame = () => {
+        setScore(0);
+        setCurrentModelIndex(Math.floor(Math.random() * meshes.length));
+        setTimeLeft(20);
+        setGameState('SCANNING');
+        rotationRef.current = { x: 0, y: 0 };
+    };
+
+    const handleIdentify = (name: string) => {
+        if (name === meshes[currentModelIndex].name) {
+            setScore(s => s + 500 + timeLeft * 10);
+            // Next round
+            const next = (currentModelIndex + 1 + Math.floor(Math.random()*(meshes.length-1))) % meshes.length;
+            setCurrentModelIndex(next);
+            setTimeLeft(20); // Reset timer
+        } else {
+            // Wrong answer penalty
+            setTimeLeft(t => Math.max(0, t - 5));
+        }
+    };
+
+    // Timer
+    useEffect(() => {
+        if (gameState !== 'SCANNING') return;
+        const timer = setInterval(() => {
+            setTimeLeft(prev => {
+                if (prev <= 0) {
+                    setGameState('RESULT');
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [gameState]);
+
+    // 3D Rendering Loop
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        let frameId: number;
+        const perspective = 400;
+        
+        const render = (time: number) => {
+            if (gameState !== 'SCANNING') return;
+            
+            // Auto rotate slightly if not interacting
+            if (!isDraggingRef.current) {
+                rotationRef.current.y += 0.005;
+            }
+
+            const width = canvas.width = canvas.offsetWidth;
+            const height = canvas.height = canvas.offsetHeight;
+            const cx = width / 2;
+            const cy = height / 2;
+
+            ctx.fillStyle = '#050505'; // Match BG
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw Grid (Floor)
+            ctx.strokeStyle = '#111';
+            ctx.lineWidth = 1;
+            // ... (Simple grid logic could go here, omitting for performance focus on mesh)
+
+            const mesh = meshes[currentModelIndex];
+            
+            // Rotation Math
+            const cosX = Math.cos(rotationRef.current.x);
+            const sinX = Math.sin(rotationRef.current.x);
+            const cosY = Math.cos(rotationRef.current.y);
+            const sinY = Math.sin(rotationRef.current.y);
+
+            const projectedVerts = mesh.vertices.map(v => {
+                // Rotate Y
+                let x = v.x * cosY - v.z * sinY;
+                let z = v.z * cosY + v.x * sinY;
+                // Rotate X
+                let y = v.y * cosX - z * sinX;
+                z = z * cosX + v.y * sinX;
+
+                // Project
+                const scale = perspective / (perspective + z + 200); // +200 to push back
+                return {
+                    x: x * scale + cx,
+                    y: y * scale + cy,
+                    scale
+                };
+            });
+
+            // Draw Edges
+            ctx.beginPath();
+            ctx.strokeStyle = colors.primary; // '#06b6d4'
+            ctx.lineWidth = 1.5;
+            ctx.lineCap = 'round';
+            
+            mesh.edges.forEach(edge => {
+                const p1 = projectedVerts[edge.start];
+                const p2 = projectedVerts[edge.end];
+                // Simple clipping
+                if (p1.scale > 0 && p2.scale > 0) {
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                }
+            });
+            ctx.stroke();
+
+            // Draw Vertices (Glow effect)
+            ctx.fillStyle = '#fff';
+            projectedVerts.forEach((p, i) => {
+                // Only draw some vertices to reduce noise, or all for "point cloud" feel
+                if (i % 2 === 0) { 
+                    const size = 2 * p.scale;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, size, 0, Math.PI*2);
+                    ctx.fill();
+                }
+            });
+
+            // Scanline Effect
+            const scanY = (time * 0.1) % height;
+            ctx.fillStyle = `rgba(${parseInt(colors.primary.slice(1,3),16)}, ${parseInt(colors.primary.slice(3,5),16)}, ${parseInt(colors.primary.slice(5,7),16)}, 0.1)`;
+            ctx.fillRect(0, scanY, width, 10);
+
+            frameId = requestAnimationFrame(render);
+        };
+
+        if (gameState === 'SCANNING') {
+            frameId = requestAnimationFrame(render);
+        } else {
+            // Static clear
+            ctx.fillStyle = '#050505';
+            ctx.fillRect(0,0, canvas.width, canvas.height);
+        }
+
+        return () => cancelAnimationFrame(frameId);
+    }, [gameState, currentModelIndex, colors]);
+
+    // Controls
+    const handleStart = (e: React.MouseEvent | React.TouchEvent) => {
+        isDraggingRef.current = true;
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        lastMouseRef.current = { x: clientX, y: clientY };
+    };
+
+    const handleMove = (e: React.MouseEvent | React.TouchEvent) => {
+        if (!isDraggingRef.current) return;
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        
+        const dx = clientX - lastMouseRef.current.x;
+        const dy = clientY - lastMouseRef.current.y;
+        
+        rotationRef.current.y += dx * 0.01;
+        rotationRef.current.x += dy * 0.01;
+        
+        lastMouseRef.current = { x: clientX, y: clientY };
+    };
+
+    const handleEnd = () => {
+        isDraggingRef.current = false;
+    };
+
+    return (
+        <div className="h-full w-full relative overflow-hidden bg-black flex flex-col font-mono select-none">
+            <canvas 
+                ref={canvasRef} 
+                className="absolute inset-0 w-full h-full cursor-move touch-none"
+                onMouseDown={handleStart}
+                onMouseMove={handleMove}
+                onMouseUp={handleEnd}
+                onMouseLeave={handleEnd}
+                onTouchStart={handleStart}
+                onTouchMove={handleMove}
+                onTouchEnd={handleEnd}
+            />
+            
+            <button onClick={onBack} className="absolute top-4 left-4 z-20 p-2 bg-black/50 border border-gray-700 rounded text-gray-400 hover:text-white"><ChevronLeft /></button>
+
+            {gameState === 'MENU' && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm z-30 p-6 text-center">
+                    <Scan size={64} className="text-primary mb-4 animate-pulse" />
+                    <h1 className="text-4xl md:text-5xl font-black text-white mb-2 tracking-tighter">BIO-<span className="text-primary">SCAN</span></h1>
+                    <p className="text-gray-400 mb-8 max-w-sm text-sm">Analyze 3D biological anomalies. Rotate model to identify structure.</p>
+                    <CyberButton onClick={startGame}><Play size={18} /> INITIALIZE SCAN</CyberButton>
+                </div>
+            )}
+
+            {gameState === 'SCANNING' && (
+                <>
+                    {/* HUD Overlay */}
+                    <div className="absolute top-4 right-4 z-20 text-right pointer-events-none">
+                        <div className="text-xs text-gray-500">SCORE</div>
+                        <div className="text-2xl font-black text-white">{score}</div>
+                    </div>
+                    
+                    <div className="absolute top-20 left-4 z-10 pointer-events-none opacity-50 hidden md:block">
+                        <div className="border-l-2 border-primary pl-2 mb-4">
+                            <div className="text-[10px] text-primary">ROTATION_X</div>
+                            <div className="text-sm font-bold text-white">{rotationRef.current.x.toFixed(2)}</div>
+                        </div>
+                        <div className="border-l-2 border-primary pl-2">
+                            <div className="text-[10px] text-primary">ROTATION_Y</div>
+                            <div className="text-sm font-bold text-white">{rotationRef.current.y.toFixed(2)}</div>
+                        </div>
+                    </div>
+
+                    {/* Timer Bar */}
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gray-900 z-30">
+                        <motion.div 
+                            className="h-full bg-primary"
+                            initial={{ width: '100%' }}
+                            animate={{ width: `${(timeLeft / 20) * 100}%` }}
+                            transition={{ ease: "linear", duration: 0.5 }}
+                        />
+                    </div>
+
+                    {/* Bottom Controls */}
+                    <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black via-black/80 to-transparent z-20">
+                        <div className="text-center mb-4 text-xs text-primary animate-pulse">IDENTIFY BIOLOGICAL STRUCTURE</div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 max-w-2xl mx-auto">
+                            {['CRANIUM', 'THORAX', 'HELIX_DNA', 'METACARPAL'].map(name => (
+                                <button
+                                    key={name}
+                                    onClick={() => handleIdentify(name)}
+                                    className="p-3 border border-gray-700 bg-gray-900/80 hover:bg-primary/20 hover:border-primary text-white text-xs font-bold rounded transition-all backdrop-blur-md active:scale-95"
+                                >
+                                    {name}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {gameState === 'RESULT' && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md z-30 p-6 text-center">
+                    <Activity size={48} className="text-red-500 mb-4" />
+                    <h2 className="text-3xl font-black text-white mb-2">SCAN COMPLETE</h2>
+                    <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500 mb-8">{score}</div>
+                    <div className="grid grid-cols-2 gap-4 max-w-xs mx-auto mb-8 text-sm">
+                         <div className="bg-gray-800 p-3 rounded border border-gray-700">
+                             <div className="text-gray-500 text-xs">STATUS</div>
+                             <div className="font-bold text-primary">TERMINATED</div>
+                         </div>
+                    </div>
+                    <CyberButton onClick={startGame} variant="secondary"><RotateCcw size={18} /> REBOOT SYSTEM</CyberButton>
+                </div>
+            )}
+        </div>
+    );
 };
 
 // --- TECH TRIVIA GAME ---
@@ -1357,7 +1765,7 @@ const CyberPac = ({ onBack }: { onBack: () => void }) => {
 // --- MAIN MODULE & MENU ---
 const GameModule = () => {
   const { colors } = useSystem();
-  const [activeGame, setActiveGame] = useState<'MENU' | 'RUNNER' | 'TYPER' | 'SNAKE' | 'PACMAN' | 'TRIVIA'>('MENU');
+  const [activeGame, setActiveGame] = useState<'MENU' | 'RUNNER' | 'TYPER' | 'SNAKE' | 'PACMAN' | 'TRIVIA' | 'BIO_SCAN'>('MENU');
 
   return (
     <div className="h-full w-full relative bg-bg">
@@ -1370,7 +1778,7 @@ const GameModule = () => {
                 <h2 className="text-3xl md:text-5xl font-black text-white mb-2 tracking-tighter">ARCADE <span className="text-primary">NEXUS</span></h2>
                 <p className="text-gray-500 mb-12 font-mono text-sm">SELECT SIMULATION PROTOCOL</p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 max-w-7xl w-full">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl w-full">
                     {/* Runner */}
                     <button 
                        onClick={() => setActiveGame('RUNNER')}
@@ -1460,6 +1868,24 @@ const GameModule = () => {
                             <Play size={12} />
                         </div>
                     </button>
+
+                    {/* Bio Scan */}
+                    <button 
+                       onClick={() => setActiveGame('BIO_SCAN')}
+                       className="group relative h-64 bg-gray-900 border border-gray-800 rounded-xl overflow-hidden hover:border-cyan-400 transition-all text-left flex flex-col"
+                    >
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0),rgba(0,0,0,0.8))]" />
+                        <div className="absolute inset-0 opacity-10 bg-[linear-gradient(45deg,transparent_25%,rgba(6,182,212,0.1)_25%,rgba(6,182,212,0.1)_50%,transparent_50%,transparent_75%,rgba(6,182,212,0.1)_75%,rgba(6,182,212,0.1)_100%)] bg-[size:20px_20px]" />
+                        <div className="relative z-10 p-8 flex-1 flex flex-col items-center justify-center">
+                            <Scan size={48} className="text-gray-700 group-hover:text-cyan-400 mb-4 transition-colors" />
+                            <h3 className="text-xl font-bold text-white group-hover:text-cyan-400">BIO SCAN</h3>
+                            <p className="text-gray-500 text-xs mt-2 text-center px-4">3D Anatomy Analysis. Identify biological structures.</p>
+                        </div>
+                        <div className="relative z-10 p-3 border-t border-gray-800 bg-black/40 flex justify-between items-center text-[10px] font-mono text-gray-500 group-hover:text-white">
+                            <span>DIFF: MED</span>
+                            <Play size={12} />
+                        </div>
+                    </button>
                 </div>
             </motion.div>
          )}
@@ -1491,6 +1917,12 @@ const GameModule = () => {
          {activeGame === 'TRIVIA' && (
              <motion.div className="h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                  <TechTrivia onBack={() => setActiveGame('MENU')} />
+             </motion.div>
+         )}
+
+         {activeGame === 'BIO_SCAN' && (
+             <motion.div className="h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                 <BioScanner onBack={() => setActiveGame('MENU')} />
              </motion.div>
          )}
        </AnimatePresence>
