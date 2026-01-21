@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSystem } from '../../context/SystemContext';
 import { PaletteName, Achievement } from '../../types';
@@ -30,6 +31,46 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [recentAchievement, setRecentAchievement] = useState<Achievement | null>(null);
   const [time, setTime] = useState(new Date().toLocaleTimeString());
+
+  // Synthesized Boot Sound
+  const playBootSound = useCallback(() => {
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      
+      const t = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+
+      // Signal Path
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+
+      // Sound Design (Futuristic Swell)
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(220, t);
+      osc.frequency.exponentialRampToValueAtTime(880, t + 0.1); // Quick sweep up
+      osc.frequency.linearRampToValueAtTime(440, t + 0.4); // Settle down
+
+      // Filter Sweep
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(0, t);
+      filter.frequency.linearRampToValueAtTime(5000, t + 0.1);
+      
+      // Envelope
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.2, t + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 1.5);
+
+      osc.start(t);
+      osc.stop(t + 1.5);
+    } catch (e) {
+      console.warn("Audio Context blocked or failed", e);
+    }
+  }, []);
 
   // Update time for footer
   useEffect(() => {
@@ -67,7 +108,10 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
   if (!booted) {
     return (
       <div style={styleVars} className="fixed inset-0 bg-bg text-primary font-mono">
-        <BootSequence onComplete={() => setBooted(true)} />
+        <BootSequence onComplete={() => {
+            setBooted(true);
+            playBootSound();
+        }} />
       </div>
     );
   }

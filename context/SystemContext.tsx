@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { PaletteName, ThemeColors, Achievement, ThemeMode } from '../types';
 import { PALETTES, ACHIEVEMENTS_LIST } from '../constants';
@@ -18,6 +19,8 @@ interface SystemContextType {
   toggleSound: () => void;
   highScore: number;
   updateHighScore: (score: number) => void;
+  triviaHighScore: number;
+  updateTriviaHighScore: (score: number) => void;
   themeMode: ThemeMode;
   toggleThemeMode: () => void;
 }
@@ -32,6 +35,7 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [overclocked, setOverclocked] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [highScore, setHighScore] = useState(0);
+  const [triviaHighScore, setTriviaHighScore] = useState(0);
   const [themeMode, setThemeMode] = useState<ThemeMode>('dark');
 
   // Load persistence
@@ -54,6 +58,9 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     const savedScore = localStorage.getItem('issa_os_highscore');
     if (savedScore) setHighScore(parseInt(savedScore, 10));
+
+    const savedTriviaScore = localStorage.getItem('issa_os_trivia_highscore');
+    if (savedTriviaScore) setTriviaHighScore(parseInt(savedTriviaScore, 10));
 
     const visited = localStorage.getItem('issa_os_visited');
     if (visited) setBooted(true);
@@ -109,6 +116,13 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   };
 
+  const updateTriviaHighScore = (score: number) => {
+    if (score > triviaHighScore) {
+      setTriviaHighScore(score);
+      localStorage.setItem('issa_os_trivia_highscore', score.toString());
+    }
+  };
+
   const toggleSound = () => setSoundEnabled(prev => !prev);
 
   // Compute final colors based on mode
@@ -129,6 +143,7 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       overclocked, setOverclocked,
       soundEnabled, toggleSound,
       highScore, updateHighScore,
+      triviaHighScore, updateTriviaHighScore,
       themeMode, toggleThemeMode
     }}>
       {children}

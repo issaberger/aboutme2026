@@ -1,8 +1,8 @@
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useSystem } from '../../context/SystemContext';
 import CyberButton from '../ui/CyberButton';
-import { Play, RotateCcw, ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Keyboard, Gamepad2, ChevronLeft, Hexagon, Ghost } from 'lucide-react';
+import { Play, RotateCcw, ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Keyboard, Gamepad2, ChevronLeft, Hexagon, Ghost, Brain, Check, X as XIcon, Timer } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- SHARED CONSTANTS ---
@@ -11,6 +11,46 @@ const WORD_CATEGORIES: Record<string, string[]> = {
   HACKER: ['MAINFRAME', 'FIREWALL', 'ENCRYPTION', 'CIPHER', 'DECRYPT', 'PAYLOAD', 'EXPLOIT', 'ZERODAY', 'PHISHING', 'BRUTEFORCE', 'ROOTKIT', 'DAEMON', 'PROXY', 'BACKDOOR', 'INJECT', 'SPOOF', 'SNIFFER', 'BOTNET', 'RANSOMWARE', 'KEYLOGGER', 'DDOS', 'TROJAN', 'WORM', 'VIRUS', 'MALWARE', 'SPYWARE', 'ADWARE', 'LOGICBOMB'],
   SYSTEM: ['KERNEL', 'DRIVER', 'MEMORY', 'PROCESS', 'THREAD', 'BUFFER', 'REGISTRY', 'BIOS', 'BOOT', 'TERMINAL', 'SHELL', 'SUDO', 'SERVER', 'CLIENT', 'SOCKET', 'PORT', 'LATENCY', 'BANDWIDTH', 'PROTOCOL', 'NETWORK', 'IP', 'DNS', 'DHCP', 'TCP', 'UDP', 'HTTP', 'SSH', 'FTP', 'SMTP']
 };
+
+interface Question {
+  id: number;
+  category: string;
+  question: string;
+  options: string[];
+  answer: number; // Index of correct answer
+}
+
+const TRIVIA_QUESTIONS: Question[] = [
+    // Hardware
+    { id: 1, category: 'Hardware', question: "Which component is considered the 'brain' of the computer?", options: ["GPU", "CPU", "RAM", "HDD"], answer: 1 },
+    { id: 2, category: 'Hardware', question: "What does 'SSD' stand for?", options: ["Super Speed Drive", "Solid State Drive", "System Storage Disk", "Serial State Disk"], answer: 1 },
+    { id: 3, category: 'Hardware', question: "Moore's Law predicts that the number of transistors on a microchip doubles approximately every:", options: ["1 Year", "2 Years", "5 Years", "10 Years"], answer: 1 },
+    { id: 4, category: 'Hardware', question: "Which of these is volatile memory?", options: ["ROM", "Flash", "RAM", "Hard Disk"], answer: 2 },
+    { id: 5, category: 'Hardware', question: "What represents the smallest unit of data in a computer?", options: ["Byte", "Bit", "Nibble", "Pixel"], answer: 1 },
+    
+    // Software & OS
+    { id: 6, category: 'Software', question: "Which OS kernel is Linux based on?", options: ["Unix", "Windows NT", "DOS", "BSD"], answer: 0 },
+    { id: 7, category: 'Software', question: "What is the core component of an Operating System called?", options: ["Shell", "Kernel", "BIOS", "Registry"], answer: 1 },
+    { id: 8, category: 'Software', question: "Which license is commonly associated with open-source software?", options: ["Copyright", "Trademark", "GPL", "Patent"], answer: 2 },
+    { id: 9, category: 'Software', question: "What does 'GUI' stand for?", options: ["Global User Interface", "Graphical User Interface", "General Unit Interaction", "Gaming User Input"], answer: 1 },
+    
+    // Networking
+    { id: 10, category: 'Networking', question: "What port is standard for HTTPS traffic?", options: ["80", "21", "443", "22"], answer: 2 },
+    { id: 11, category: 'Networking', question: "Which layer of the OSI model deals with routing?", options: ["Physical", "Data Link", "Network", "Transport"], answer: 2 },
+    { id: 12, category: 'Networking', question: "What does DNS stand for?", options: ["Digital Network Service", "Domain Name System", "Data Name Server", "Direct Network Solution"], answer: 1 },
+    { id: 13, category: 'Networking', question: "Which protocol is used for secure remote login?", options: ["FTP", "HTTP", "SSH", "Telnet"], answer: 2 },
+
+    // Programming
+    { id: 14, category: 'Programming', question: "Which language is known as the 'mother of all languages'?", options: ["Fortran", "C", "Assembly", "ALGOL"], answer: 3 },
+    { id: 15, category: 'Programming', question: "What symbol starts a comment in Python?", options: ["//", "/*", "#", "--"], answer: 2 },
+    { id: 16, category: 'Programming', question: "React is a library maintained by which company?", options: ["Google", "Microsoft", "Meta", "Amazon"], answer: 2 },
+    { id: 17, category: 'Programming', question: "Which of these is a statically typed language?", options: ["Python", "JavaScript", "TypeScript", "Ruby"], answer: 2 },
+
+    // AI
+    { id: 18, category: 'AI', question: "What does 'LLM' stand for in AI?", options: ["Large Language Model", "Long Learning Module", "Linear Logic Machine", "Latent Learning Mode"], answer: 0 },
+    { id: 19, category: 'AI', question: "Which test is used to determine if a machine exhibits intelligent behavior?", options: ["Voigt-Kampff", "Turing Test", "Rorschach Test", "Mirror Test"], answer: 1 },
+    { id: 20, category: 'AI', question: "What is the term for an AI generating incorrect information confidently?", options: ["Dreaming", "Glitching", "Hallucinating", "Overfitting"], answer: 2 }
+];
 
 interface Particle {
   x: number;
@@ -30,7 +70,7 @@ const MobileControls = ({ onInput }: { onInput: (dir: { x: number, y: number }) 
   };
 
   return (
-    <div className="absolute bottom-12 right-6 z-40 grid grid-cols-3 gap-2 md:hidden opacity-80 touch-none select-none">
+    <div className="absolute bottom-24 right-6 z-50 grid grid-cols-3 gap-2 md:hidden opacity-80 touch-none select-none">
       <div />
       <button 
         className="w-16 h-16 bg-gray-900/90 border border-gray-600 rounded-2xl flex items-center justify-center active:bg-primary active:text-black active:scale-95 transition-all shadow-lg backdrop-blur-md"
@@ -61,6 +101,191 @@ const MobileControls = ({ onInput }: { onInput: (dir: { x: number, y: number }) 
         <ArrowRight size={32} />
       </button>
     </div>
+  );
+};
+
+// --- TECH TRIVIA GAME ---
+const TechTrivia = ({ onBack }: { onBack: () => void }) => {
+  const { colors, updateTriviaHighScore, triviaHighScore } = useSystem();
+  const [gameState, setGameState] = useState<'MENU' | 'PLAYING' | 'RESULT'>('MENU');
+  const [currentQuestions, setCurrentQuestions] = useState<Question[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [score, setScore] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(15);
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [isAnswered, setIsAnswered] = useState(false);
+
+  const startGame = (category: string | null) => {
+     let pool = TRIVIA_QUESTIONS;
+     if (category) {
+        pool = TRIVIA_QUESTIONS.filter(q => q.category === category);
+     }
+     // Shuffle and pick 10
+     const shuffled = [...pool].sort(() => 0.5 - Math.random()).slice(0, 10);
+     setCurrentQuestions(shuffled);
+     setCurrentIndex(0);
+     setScore(0);
+     setTimeLeft(15);
+     setGameState('PLAYING');
+     setIsAnswered(false);
+     setSelectedAnswer(null);
+  };
+
+  useEffect(() => {
+     if (gameState !== 'PLAYING' || isAnswered) return;
+     const timer = setInterval(() => {
+        setTimeLeft(prev => {
+           if (prev <= 1) {
+              handleAnswer(-1); // Time out
+              return 0;
+           }
+           return prev - 1;
+        });
+     }, 1000);
+     return () => clearInterval(timer);
+  }, [gameState, isAnswered, currentIndex]);
+
+  const handleAnswer = (index: number) => {
+     if (isAnswered) return;
+     setIsAnswered(true);
+     setSelectedAnswer(index);
+     
+     const correct = currentQuestions[currentIndex].answer;
+     if (index === correct) {
+         setScore(s => s + 100 + (timeLeft * 10)); // Bonus for speed
+     }
+
+     setTimeout(() => {
+         if (currentIndex < currentQuestions.length - 1) {
+             setCurrentIndex(prev => prev + 1);
+             setTimeLeft(15);
+             setIsAnswered(false);
+             setSelectedAnswer(null);
+         } else {
+             setGameState('RESULT');
+             updateTriviaHighScore(score + (index === correct ? (100 + timeLeft*10) : 0));
+         }
+     }, 1500);
+  };
+
+  return (
+      <div className="h-full w-full relative overflow-hidden font-sans bg-gray-900/50 backdrop-blur-sm flex flex-col items-center justify-center p-6">
+          <button onClick={onBack} className="absolute top-4 left-4 z-20 p-2 bg-black/50 border border-gray-700 rounded text-gray-400 hover:text-white"><ChevronLeft /></button>
+
+          <AnimatePresence mode='wait'>
+            {gameState === 'MENU' && (
+                <motion.div 
+                    key="menu"
+                    initial={{opacity: 0, y: 20}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, y: -20}}
+                    className="max-w-md w-full text-center"
+                >
+                    <h1 className="text-4xl font-black text-white mb-2 tracking-tighter">TECH <span className="text-primary">TRIVIA</span></h1>
+                    <p className="text-gray-400 mb-8 text-sm">Test your knowledge across the digital spectrum.</p>
+                    
+                    <div className="grid grid-cols-1 gap-3">
+                         <CyberButton onClick={() => startGame(null)} className="w-full">RANDOM MIX</CyberButton>
+                         <div className="grid grid-cols-2 gap-3">
+                             {['Hardware', 'Software', 'Networking', 'Programming', 'AI'].map(cat => (
+                                 <button 
+                                    key={cat}
+                                    onClick={() => startGame(cat)}
+                                    className="p-3 bg-gray-800 border border-gray-700 rounded hover:border-primary hover:bg-gray-700 transition-all text-xs font-bold uppercase"
+                                 >
+                                     {cat}
+                                 </button>
+                             ))}
+                         </div>
+                    </div>
+                </motion.div>
+            )}
+
+            {gameState === 'PLAYING' && (
+                <motion.div 
+                    key="playing"
+                    className="max-w-2xl w-full"
+                    initial={{opacity: 0}} animate={{opacity: 1}}
+                >
+                    <div className="flex justify-between items-end mb-6 border-b border-gray-700 pb-4">
+                        <div>
+                            <span className="text-primary text-xs font-mono font-bold tracking-widest">{currentQuestions[currentIndex].category.toUpperCase()}</span>
+                            <div className="text-gray-400 text-xs mt-1">Question {currentIndex + 1} / {currentQuestions.length}</div>
+                        </div>
+                        <div className="text-right">
+                             <div className="text-2xl font-black text-white">{score}</div>
+                             <div className="flex items-center gap-2 text-xs font-mono text-gray-500 justify-end">
+                                 <Timer size={12} /> {timeLeft}s
+                             </div>
+                        </div>
+                    </div>
+
+                    <h2 className="text-xl md:text-2xl font-bold text-white mb-8 leading-snug">
+                        {currentQuestions[currentIndex].question}
+                    </h2>
+
+                    <div className="grid grid-cols-1 gap-4">
+                        {currentQuestions[currentIndex].options.map((opt, idx) => {
+                            let stateClass = "bg-gray-800/50 border-gray-700 hover:border-gray-500 hover:bg-gray-800";
+                            if (isAnswered) {
+                                if (idx === currentQuestions[currentIndex].answer) stateClass = "bg-green-500/20 border-green-500 text-green-400";
+                                else if (idx === selectedAnswer) stateClass = "bg-red-500/20 border-red-500 text-red-400";
+                                else stateClass = "bg-gray-900 border-gray-800 opacity-50";
+                            }
+                            
+                            return (
+                                <button
+                                    key={idx}
+                                    disabled={isAnswered}
+                                    onClick={() => handleAnswer(idx)}
+                                    className={`p-4 text-left border rounded-lg transition-all flex items-center justify-between group ${stateClass}`}
+                                >
+                                    <span className="font-bold text-sm">{opt}</span>
+                                    {isAnswered && idx === currentQuestions[currentIndex].answer && <Check size={18} />}
+                                    {isAnswered && idx === selectedAnswer && idx !== currentQuestions[currentIndex].answer && <XIcon size={18} />}
+                                </button>
+                            );
+                        })}
+                    </div>
+                    
+                    {/* Timer Bar */}
+                    <div className="h-1 w-full bg-gray-800 mt-8 rounded-full overflow-hidden">
+                        <motion.div 
+                            className="h-full bg-primary"
+                            initial={{ width: "100%" }}
+                            animate={{ width: `${(timeLeft / 15) * 100}%` }}
+                            transition={{ ease: "linear", duration: 1 }}
+                        />
+                    </div>
+                </motion.div>
+            )}
+
+            {gameState === 'RESULT' && (
+                <motion.div 
+                    key="result"
+                    initial={{opacity: 0, scale: 0.9}} animate={{opacity: 1, scale: 1}}
+                    className="text-center"
+                >
+                    <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6 text-primary border border-primary">
+                        <Brain size={40} />
+                    </div>
+                    <h2 className="text-3xl font-black text-white mb-2">ASSESSMENT COMPLETE</h2>
+                    <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500 mb-8">{score}</div>
+                    
+                    <div className="grid grid-cols-2 gap-4 max-w-xs mx-auto mb-8 text-sm">
+                         <div className="bg-gray-800 p-3 rounded">
+                             <div className="text-gray-500 text-xs">HIGH SCORE</div>
+                             <div className="font-bold text-white">{Math.max(score, triviaHighScore)}</div>
+                         </div>
+                         <div className="bg-gray-800 p-3 rounded">
+                             <div className="text-gray-500 text-xs">QUESTIONS</div>
+                             <div className="font-bold text-white">10 / 10</div>
+                         </div>
+                    </div>
+
+                    <CyberButton onClick={() => setGameState('MENU')}>RETURN TO MENU</CyberButton>
+                </motion.div>
+            )}
+          </AnimatePresence>
+      </div>
   );
 };
 
@@ -639,7 +864,7 @@ const NeuralSnake = ({ onBack }: { onBack: () => void }) => {
   );
 };
 
-// --- CYBER PAC GAME (Advanced) ---
+// --- CYBER PAC GAME (Optimized) ---
 const PAC_MAP = [
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
   [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1],
@@ -671,12 +896,9 @@ const CyberPac = ({ onBack }: { onBack: () => void }) => {
     const [lives, setLives] = useState(3);
     const [localHigh, setLocalHigh] = useState(parseInt(localStorage.getItem('issa_os_pac_high') || '0'));
     
-    // Config for Speed
-    const [isMobile, setIsMobile] = useState(false);
-    useEffect(() => {
-        setIsMobile(window.innerWidth < 768);
-    }, []);
-    const SPEED = isMobile ? 0.09 : 0.13; 
+    // Adaptive Speed
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const SPEED = isMobile ? 0.08 : 0.11; 
 
     const stateRef = useRef({
         grid: [] as number[][],
@@ -701,8 +923,9 @@ const CyberPac = ({ onBack }: { onBack: () => void }) => {
             setScore(0);
             setLives(3);
         }
+        // Spawn Point
         state.player = { x: 9, y: 16, dir: { x: -1, y: 0 }, nextDir: { x: -1, y: 0 }, mouth: 0 };
-        // Reset Ghosts to "House" positions
+        // Ghosts House
         state.ghosts = [
             { x: 9, y: 7, color: '#ef4444', dir: { x: 1, y: 0 }, type: 'chase', mode: 'scatter' },
             { x: 9, y: 9, color: '#ec4899', dir: { x: -1, y: 0 }, type: 'ambush', mode: 'scatter' },
@@ -724,7 +947,7 @@ const CyberPac = ({ onBack }: { onBack: () => void }) => {
         stateRef.current.player.nextDir = dir;
     }, [gameState]);
 
-    // Touch & Swipe Logic
+    // Keyboard & Swipe
     useEffect(() => {
         const handleKey = (e: KeyboardEvent) => {
             if (e.key === 'ArrowUp' || e.key === 'w') handleInput({ x: 0, y: -1 });
@@ -772,54 +995,72 @@ const CyberPac = ({ onBack }: { onBack: () => void }) => {
 
         let animationFrameId: number;
 
-        const checkWall = (x: number, y: number) => {
+        const isWall = (x: number, y: number) => {
              const row = Math.round(y);
              const col = Math.round(x);
+             // Out of bounds check
              if (row < 0 || row >= PAC_MAP.length || col < 0 || col >= PAC_MAP[0].length) {
-                 // Allow tunnel (columns -1 and max)
-                 if (col < 0 || col >= PAC_MAP[0].length) return false; 
-                 return true; // Treat OOB as wall for top/bottom
+                 // Allow tunnel
+                 if ((row === 8 || row === 12) && (col < 0 || col >= PAC_MAP[0].length)) return false; 
+                 return true; 
              }
              return stateRef.current.grid[row][col] === 1;
         };
 
         const moveEntity = (entity: any, speed: number) => {
-            const px = entity.x;
-            const py = entity.y;
-            const centerX = Math.round(px);
-            const centerY = Math.round(py);
-            const dist = Math.sqrt((px - centerX)**2 + (py - centerY)**2);
+            // Get current integer position (tile center)
+            const cx = Math.round(entity.x);
+            const cy = Math.round(entity.y);
+            
+            // Distance from tile center
+            const dx = entity.x - cx;
+            const dy = entity.y - cy;
+            const distFromCenter = Math.sqrt(dx*dx + dy*dy);
 
-            // CORNERING LOGIC: If we are close to the center of a tile, try to turn
-            if (entity.nextDir && dist < speed) {
-                // Check if turn is valid
-                if (!checkWall(centerX + entity.nextDir.x, centerY + entity.nextDir.y)) {
-                    entity.x = centerX;
-                    entity.y = centerY;
-                    entity.dir = entity.nextDir;
-                    entity.nextDir = null; // Turn consumed
+            // CORNERING LOGIC:
+            // If we have a queued turn (nextDir) and we are close enough to the center of the tile
+            if (entity.nextDir) {
+                if (distFromCenter < speed * 1.5) {
+                    // Check if target tile is open
+                    const tx = cx + entity.nextDir.x;
+                    const ty = cy + entity.nextDir.y;
+                    
+                    if (!isWall(tx, ty)) {
+                        // Snap to center and turn
+                        entity.x = cx;
+                        entity.y = cy;
+                        entity.dir = entity.nextDir;
+                        entity.nextDir = null; // Turn consumed
+                    }
                 }
             }
 
-            // WALL COLLISION: Check slightly ahead
+            // COLLISION AHEAD LOGIC:
+            // Calculate next position
             const nextX = entity.x + entity.dir.x * speed;
             const nextY = entity.y + entity.dir.y * speed;
             
-            // We check the center of the 'next' body position
-            if (!checkWall(nextX + entity.dir.x * 0.4, nextY + entity.dir.y * 0.4)) {
+            // Look ahead to center of next tile
+            // If direction is positive, look slightly forward (ceil), if negative look backward (floor)
+            // Simpler approach: Check point slightly ahead of us
+            const checkDist = 0.5 + speed;
+            const targetX = entity.x + entity.dir.x * checkDist;
+            const targetY = entity.y + entity.dir.y * checkDist;
+            
+            if (isWall(targetX, targetY)) {
+                // Wall ahead. Stop at center.
+                if (distFromCenter < speed) {
+                    entity.x = cx;
+                    entity.y = cy;
+                }
+            } else {
                 entity.x = nextX;
                 entity.y = nextY;
-            } else {
-                // Snap to center if we hit a wall to keep alignment clean
-                if (dist < speed) {
-                    entity.x = centerX;
-                    entity.y = centerY;
-                }
             }
 
-            // TUNNEL WRAPPING
-            if (entity.x < -0.6) entity.x = PAC_MAP[0].length - 0.4;
-            if (entity.x > PAC_MAP[0].length - 0.4) entity.x = -0.6;
+            // TUNNEL
+            if (entity.x < -0.8) entity.x = PAC_MAP[0].length - 0.2;
+            if (entity.x > PAC_MAP[0].length - 0.2) entity.x = -0.8;
         };
 
         const render = (time: number) => {
@@ -827,21 +1068,22 @@ const CyberPac = ({ onBack }: { onBack: () => void }) => {
             const state = stateRef.current;
             state.gameTime++;
 
-            // Update AI Modes (Scatter/Chase waves)
+            // AI State Controller
             if (state.powerModeTime > 0) {
                 state.powerModeTime--;
             } else {
-                const wave = (state.gameTime / 60) % 27; // Simple wave cycle
-                const newMode = wave < 7 ? 'scatter' : 'chase';
+                const wave = (state.gameTime / 60) % 20; 
+                const newMode = wave < 5 ? 'scatter' : 'chase';
                 state.ghosts.forEach(g => { if (g.mode !== 'frightened') g.mode = newMode; });
             }
 
-            // Move Player
+            // Player Logic
             moveEntity(state.player, SPEED);
 
             // Eating
             const px = Math.round(state.player.x);
             const py = Math.round(state.player.y);
+            // Verify bounds
             if (py >= 0 && py < state.grid.length && px >= 0 && px < state.grid[0].length) {
                  const cell = state.grid[py][px];
                  if (cell === 2) {
@@ -852,91 +1094,100 @@ const CyberPac = ({ onBack }: { onBack: () => void }) => {
                      state.grid[py][px] = 0;
                      state.score += 50;
                      setScore(state.score);
-                     state.powerModeTime = 600; // 10 sec @ 60fps
-                     state.ghosts.forEach(g => g.mode = 'frightened');
-                     // Explosion effect
-                     for(let i=0; i<20; i++) state.particles.push({x: px, y: py, vx: (Math.random()-0.5)*0.2, vy: (Math.random()-0.5)*0.2, life: 1, color: '#fff'});
+                     state.powerModeTime = 400; // ~6 seconds
+                     state.ghosts.forEach(g => {
+                         g.mode = 'frightened';
+                         // Reverse direction immediately on panic
+                         g.dir = { x: -g.dir.x, y: -g.dir.y };
+                     });
                  }
             }
 
-            // Win Condition
             if (!state.grid.some(row => row.includes(2))) {
                 setGameState('WIN');
                 updateHighScore(state.score);
             }
 
-            // Move Ghosts
+            // Ghost AI
             state.ghosts.forEach(g => {
-                const gSpeed = g.mode === 'frightened' ? SPEED * 0.5 : SPEED * 0.85;
+                const gSpeed = g.mode === 'frightened' ? SPEED * 0.6 : SPEED * 0.9;
                 const gx = Math.round(g.x);
                 const gy = Math.round(g.y);
+                const dx = g.x - gx; 
+                const dy = g.y - gy;
                 
-                // Only make decisions at tile centers
-                if (Math.sqrt((g.x - gx)**2 + (g.y - gy)**2) < gSpeed) {
-                    g.x = gx; g.y = gy;
+                // Only change direction at center of tiles
+                if (Math.sqrt(dx*dx + dy*dy) < gSpeed) {
+                    g.x = gx; g.y = gy; // Snap
                     
-                    // Possible moves (excluding reverse)
-                    const moves = [
+                    const validMoves = [
                         {x:0, y:-1}, {x:0, y:1}, {x:-1, y:0}, {x:1, y:0}
-                    ].filter(d => !(d.x === -g.dir.x && d.y === -g.dir.y) && !checkWall(gx+d.x, gy+d.y));
+                    ].filter(d => 
+                        !(d.x === -g.dir.x && d.y === -g.dir.y) && // No 180 turns
+                        !isWall(gx + d.x, gy + d.y)
+                    );
 
-                    if (moves.length > 0) {
+                    if (validMoves.length > 0) {
                         let tx = state.player.x, ty = state.player.y;
-                        
-                        // AI Target Logic
-                        if (g.mode === 'scatter') {
-                            if (g.color === '#ef4444') { tx = 1; ty = 1; } // Red -> Top Left
-                            else if (g.color === '#ec4899') { tx = 18; ty = 1; } // Pink -> Top Right
-                            else if (g.color === '#06b6d4') { tx = 18; ty = 18; } // Cyan -> Bottom Right
-                            else { tx = 1; ty = 18; } // Orange -> Bottom Left
-                        } else if (g.mode === 'chase') {
-                            // Pink tries to intercept
-                            if (g.color === '#ec4899') { tx += state.player.dir.x * 4; ty += state.player.dir.y * 4; }
-                            // Orange is random if close
-                            if (g.color === '#f97316' && Math.abs(gx - tx) + Math.abs(gy - ty) < 8) {
-                                tx = 1; ty = 18; // scatter behavior
-                            }
-                        }
 
+                        // Target Logic
                         if (g.mode === 'frightened') {
-                            // RUN AWAY LOGIC: Choose direction that maximizes distance from player
-                            g.dir = moves.reduce((best, curr) => {
-                                const distBest = (gx + best.x - state.player.x) ** 2 + (gy + best.y - state.player.y) ** 2;
-                                const distCurr = (gx + curr.x - state.player.x) ** 2 + (gy + curr.y - state.player.y) ** 2;
-                                return distCurr > distBest ? curr : best; // > means maximize distance
-                            });
-                        } else {
-                            g.dir = moves.reduce((best, curr) => {
+                            // Run AWAY from player
+                            // Choose dir that maximizes distance
+                             g.dir = validMoves.reduce((best, curr) => {
                                 const dBest = (gx+best.x-tx)**2 + (gy+best.y-ty)**2;
                                 const dCurr = (gx+curr.x-tx)**2 + (gy+curr.y-ty)**2;
-                                return dCurr < dBest ? curr : best;
+                                return dCurr > dBest ? curr : best; // Maximize
+                            });
+                        } else {
+                            if (g.mode === 'scatter') {
+                                // Corners
+                                if (g.color === '#ef4444') { tx=1; ty=1; }
+                                else if (g.color === '#ec4899') { tx=18; ty=1; }
+                                else if (g.color === '#06b6d4') { tx=18; ty=18; }
+                                else { tx=1; ty=18; }
+                            }
+                            // Chase logic standard
+                            g.dir = validMoves.reduce((best, curr) => {
+                                const dBest = (gx+best.x-tx)**2 + (gy+best.y-ty)**2;
+                                const dCurr = (gx+curr.x-tx)**2 + (gy+curr.y-ty)**2;
+                                return dCurr < dBest ? curr : best; // Minimize
                             });
                         }
                     } else {
-                        // Dead end (reverse)
+                        // Dead end
                         g.dir = { x: -g.dir.x, y: -g.dir.y };
                     }
                 }
+                
                 g.x += g.dir.x * gSpeed;
                 g.y += g.dir.y * gSpeed;
-                if (g.x < -0.6) g.x = PAC_MAP[0].length - 0.4;
-                if (g.x > PAC_MAP[0].length - 0.4) g.x = -0.6;
+
+                // Ghost Tunnel
+                if (g.x < -0.8) g.x = PAC_MAP[0].length - 0.2;
+                if (g.x > PAC_MAP[0].length - 0.2) g.x = -0.8;
             });
 
-            // Ghost Collision
+            // Collisions
             for (let g of state.ghosts) {
-                if (Math.abs(g.x - state.player.x) < 0.6 && Math.abs(g.y - state.player.y) < 0.6) {
+                if (Math.abs(g.x - state.player.x) < 0.5 && Math.abs(g.y - state.player.y) < 0.5) {
                     if (g.mode === 'frightened') {
                         // Eat Ghost
-                        g.x = 9; g.y = 9; g.mode = 'scatter';
-                        state.score += 200; setScore(state.score);
-                        for(let i=0; i<15; i++) state.particles.push({x: g.x, y: g.y, vx: (Math.random()-0.5)*0.3, vy: (Math.random()-0.5)*0.3, life: 1, color: g.color});
+                        g.x = 9; g.y = 9; // Respawn in house
+                        g.mode = 'scatter';
+                        state.score += 200; 
+                        setScore(state.score);
+                        // Particles
+                        for(let i=0; i<10; i++) state.particles.push({
+                            x: g.x, y: g.y, 
+                            vx:(Math.random()-.5)*0.3, vy:(Math.random()-.5)*0.3, 
+                            life: 1, color: '#fff'
+                        });
                     } else {
                         // Die
                         if (lives > 1) {
                             setLives(l => l - 1);
-                            // Reset positions but keep map state
-                            state.player.x = 9; state.player.y = 16;
+                            state.player = { x: 9, y: 16, dir: { x: -1, y: 0 }, nextDir: { x: -1, y: 0 }, mouth: 0 };
                             state.ghosts.forEach((gh, i) => { gh.x = 9; gh.y = 7+i%3; });
                             setGameState('READY');
                             setTimeout(() => setGameState('PLAYING'), 2000);
@@ -952,12 +1203,12 @@ const CyberPac = ({ onBack }: { onBack: () => void }) => {
                 }
             }
 
-            // Render
+            // Draw
             canvas.width = canvas.offsetWidth;
             canvas.height = canvas.offsetHeight;
             const mapW = PAC_MAP[0].length;
             const mapH = PAC_MAP.length;
-            const scale = Math.min(canvas.width / mapW, canvas.height / mapH);
+            const scale = Math.min(canvas.width / mapW, canvas.height / mapH) * 0.95; // Slight padding
             const ox = (canvas.width - mapW * scale) / 2;
             const oy = (canvas.height - mapH * scale) / 2;
 
@@ -966,22 +1217,24 @@ const CyberPac = ({ onBack }: { onBack: () => void }) => {
             ctx.translate(ox, oy);
             ctx.scale(scale, scale);
 
-            // Draw Grid
+            // Walls & Dots
             state.grid.forEach((row, y) => {
                 row.forEach((cell, x) => {
                     if (cell === 1) {
+                        ctx.fillStyle = '#0f172a';
                         ctx.strokeStyle = colors.primary;
-                        ctx.lineWidth = 0.1;
-                        ctx.shadowBlur = 10; ctx.shadowColor = colors.primary;
-                        ctx.strokeRect(x+0.2, y+0.2, 0.6, 0.6);
+                        ctx.lineWidth = 0.08;
+                        ctx.strokeRect(x, y, 1, 1);
+                        ctx.shadowBlur = 5; ctx.shadowColor = colors.primary;
+                        ctx.strokeRect(x+0.25, y+0.25, 0.5, 0.5);
                         ctx.shadowBlur = 0;
                     } else if (cell === 2) {
                         ctx.fillStyle = '#fbbf24';
-                        ctx.beginPath(); ctx.arc(x+0.5, y+0.5, 0.15, 0, Math.PI*2); ctx.fill();
+                        ctx.beginPath(); ctx.arc(x+0.5, y+0.5, 0.1, 0, Math.PI*2); ctx.fill();
                     } else if (cell === 3) {
                         ctx.fillStyle = '#fff';
                         ctx.shadowBlur = 10; ctx.shadowColor = '#fff';
-                        ctx.beginPath(); ctx.arc(x+0.5, y+0.5, 0.3, 0, Math.PI*2); ctx.fill();
+                        ctx.beginPath(); ctx.arc(x+0.5, y+0.5, 0.25, 0, Math.PI*2); ctx.fill();
                         ctx.shadowBlur = 0;
                     }
                 });
@@ -991,9 +1244,9 @@ const CyberPac = ({ onBack }: { onBack: () => void }) => {
             state.particles.forEach((p, i) => {
                 ctx.fillStyle = p.color;
                 ctx.globalAlpha = p.life;
-                ctx.beginPath(); ctx.arc(p.x, p.y, 0.15, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(p.x, p.y, 0.1, 0, Math.PI*2); ctx.fill();
                 p.x += p.vx; p.y += p.vy; p.life -= 0.05;
-                if(p.life <= 0) state.particles.splice(i, 1);
+                if(p.life<=0) state.particles.splice(i,1);
             });
             ctx.globalAlpha = 1;
 
@@ -1011,22 +1264,25 @@ const CyberPac = ({ onBack }: { onBack: () => void }) => {
 
             // Ghosts
             state.ghosts.forEach(g => {
+                // If frightened, turn BLUE (#3b82f6)
                 ctx.fillStyle = g.mode === 'frightened' ? '#3b82f6' : g.color;
-                ctx.shadowBlur = 10; ctx.shadowColor = ctx.fillStyle;
                 ctx.beginPath();
                 ctx.arc(g.x+0.5, g.y+0.5, 0.4, Math.PI, 0);
                 ctx.lineTo(g.x+0.9, g.y+0.9); ctx.lineTo(g.x+0.1, g.y+0.9);
                 ctx.fill();
-                ctx.shadowBlur = 0;
-                // Eyes
+                
+                // Eyes (White)
                 ctx.fillStyle = '#fff';
                 ctx.beginPath(); ctx.arc(g.x+0.35, g.y+0.4, 0.12, 0, Math.PI*2); ctx.fill();
                 ctx.beginPath(); ctx.arc(g.x+0.65, g.y+0.4, 0.12, 0, Math.PI*2); ctx.fill();
-                // Pupils
-                ctx.fillStyle = '#000';
+                
+                // Pupils (Look direction)
+                ctx.fillStyle = g.mode === 'frightened' ? '#fff' : '#000'; // White pupils if blue? No standard is light pupils
+                if (g.mode === 'frightened') ctx.fillStyle = '#fbbf24'; // Yellow scared eyes
+                
                 const ex = g.dir.x*0.05, ey = g.dir.y*0.05;
-                ctx.beginPath(); ctx.arc(g.x+0.35+ex, g.y+0.4+ey, 0.06, 0, Math.PI*2); ctx.fill();
-                ctx.beginPath(); ctx.arc(g.x+0.65+ex, g.y+0.4+ey, 0.06, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(g.x+0.35+ex, g.y+0.4+ey, 0.05, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(g.x+0.65+ex, g.y+0.4+ey, 0.05, 0, Math.PI*2); ctx.fill();
             });
 
             animationFrameId = requestAnimationFrame(render);
@@ -1035,7 +1291,6 @@ const CyberPac = ({ onBack }: { onBack: () => void }) => {
         if (gameState === 'PLAYING' || gameState === 'READY') {
              animationFrameId = requestAnimationFrame(render);
         } else {
-             // Static render for start screen background
              ctx.fillStyle = colors.bg; ctx.fillRect(0,0,canvas.width, canvas.height);
         }
 
@@ -1044,7 +1299,7 @@ const CyberPac = ({ onBack }: { onBack: () => void }) => {
 
     return (
         <div className="h-full w-full relative overflow-hidden select-none font-mono">
-            <canvas ref={canvasRef} className="w-full h-full block touch-none" />
+            <canvas ref={canvasRef} className="w-full h-full block touch-none" style={{ touchAction: 'none' }} />
             
             <button onClick={onBack} className="absolute top-4 left-4 z-20 p-2 bg-black/50 border border-gray-700 rounded text-gray-400 hover:text-white hover:border-white">
                 <ChevronLeft />
@@ -1066,7 +1321,7 @@ const CyberPac = ({ onBack }: { onBack: () => void }) => {
             {gameState === 'START' && (
                 <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center p-6 text-center z-10 backdrop-blur-sm">
                     <h1 className="text-4xl md:text-6xl font-black text-yellow-400 mb-2">CYBER PAC</h1>
-                    <p className="text-sm text-gray-400 mb-8 max-w-md">Consume data. Avoid Daemons. Swipe or use keys to move.</p>
+                    <p className="text-sm text-gray-400 mb-8 max-w-md">Consume data. Avoid Daemons. Swipe or use D-Pad to move.</p>
                     <CyberButton onClick={startGame}><Play size={18} /> INITIALIZE</CyberButton>
                 </div>
             )}
@@ -1102,7 +1357,7 @@ const CyberPac = ({ onBack }: { onBack: () => void }) => {
 // --- MAIN MODULE & MENU ---
 const GameModule = () => {
   const { colors } = useSystem();
-  const [activeGame, setActiveGame] = useState<'MENU' | 'RUNNER' | 'TYPER' | 'SNAKE' | 'PACMAN'>('MENU');
+  const [activeGame, setActiveGame] = useState<'MENU' | 'RUNNER' | 'TYPER' | 'SNAKE' | 'PACMAN' | 'TRIVIA'>('MENU');
 
   return (
     <div className="h-full w-full relative bg-bg">
@@ -1115,7 +1370,7 @@ const GameModule = () => {
                 <h2 className="text-3xl md:text-5xl font-black text-white mb-2 tracking-tighter">ARCADE <span className="text-primary">NEXUS</span></h2>
                 <p className="text-gray-500 mb-12 font-mono text-sm">SELECT SIMULATION PROTOCOL</p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl w-full">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 max-w-7xl w-full">
                     {/* Runner */}
                     <button 
                        onClick={() => setActiveGame('RUNNER')}
@@ -1187,6 +1442,24 @@ const GameModule = () => {
                             <Play size={12} />
                         </div>
                     </button>
+
+                    {/* Trivia */}
+                     <button 
+                       onClick={() => setActiveGame('TRIVIA')}
+                       className="group relative h-64 bg-gray-900 border border-gray-800 rounded-xl overflow-hidden hover:border-green-400 transition-all text-left flex flex-col"
+                    >
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0),rgba(0,0,0,0.8))]" />
+                        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle,#4ade80_1px,transparent_1px)] bg-[size:10px_10px]" />
+                        <div className="relative z-10 p-8 flex-1 flex flex-col items-center justify-center">
+                            <Brain size={48} className="text-gray-700 group-hover:text-green-400 mb-4 transition-colors" />
+                            <h3 className="text-xl font-bold text-white group-hover:text-green-400">TECH TRIVIA</h3>
+                            <p className="text-gray-500 text-xs mt-2 text-center px-4">Test your knowledge. Hardware, AI, Code.</p>
+                        </div>
+                        <div className="relative z-10 p-3 border-t border-gray-800 bg-black/40 flex justify-between items-center text-[10px] font-mono text-gray-500 group-hover:text-white">
+                            <span>DIFF: VARIES</span>
+                            <Play size={12} />
+                        </div>
+                    </button>
                 </div>
             </motion.div>
          )}
@@ -1212,6 +1485,12 @@ const GameModule = () => {
          {activeGame === 'PACMAN' && (
              <motion.div className="h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                  <CyberPac onBack={() => setActiveGame('MENU')} />
+             </motion.div>
+         )}
+
+         {activeGame === 'TRIVIA' && (
+             <motion.div className="h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                 <TechTrivia onBack={() => setActiveGame('MENU')} />
              </motion.div>
          )}
        </AnimatePresence>
