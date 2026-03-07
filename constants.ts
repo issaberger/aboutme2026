@@ -22,44 +22,44 @@ import {
 
 export const PALETTES: Record<PaletteName, ThemeColors> = {
   NEON_RAIN: {
-    primary: '#ffffff', // White for clean, high-end look
-    secondary: '#6366f1', // Indigo 500 for AI/Tech vibe
-    accent: '#10b981', // Emerald 500 for success
-    bg: '#030303', // Deep Void
-    panel: 'rgba(20, 20, 20, 0.6)',
-    text: '#f8fafc',
+    primary: '#06b6d4', // Cyan 500
+    secondary: '#d946ef', // Fuchsia 500
+    accent: '#fde047', // Yellow 300
+    bg: '#050505',
+    panel: 'rgba(22, 22, 22, 0.8)',
+    text: '#e0e0e0',
   },
   ACID_JUNGLE: {
-    primary: '#bef264', // Lime 300
+    primary: '#84cc16', // Lime 500
     secondary: '#10b981', // Emerald 500
     accent: '#facc15', // Yellow 400
-    bg: '#050a05',
-    panel: 'rgba(10, 25, 10, 0.6)',
-    text: '#f0fdf4',
+    bg: '#020602',
+    panel: 'rgba(10, 25, 10, 0.8)',
+    text: '#e0e0e0',
   },
   VIOLET_CIRCUIT: {
-    primary: '#c4b5fd', // Violet 300
-    secondary: '#8b5cf6', // Violet 500
+    primary: '#8b5cf6', // Violet 500
+    secondary: '#3b82f6', // Blue 500
     accent: '#f472b6', // Pink 400
-    bg: '#05030a',
-    panel: 'rgba(20, 10, 30, 0.6)',
-    text: '#f5f3ff',
+    bg: '#0b0014',
+    panel: 'rgba(20, 10, 30, 0.8)',
+    text: '#e0e0e0',
   },
   RED_ALERT: {
-    primary: '#fca5a5', // Red 300
-    secondary: '#ef4444', // Red 500
-    accent: '#fb923c', // Orange 400
-    bg: '#0f0202',
-    panel: 'rgba(30, 10, 10, 0.6)',
-    text: '#fef2f2',
+    primary: '#ef4444', // Red 500
+    secondary: '#f97316', // Orange 500
+    accent: '#ffffff', // White
+    bg: '#1a0505',
+    panel: 'rgba(30, 10, 10, 0.8)',
+    text: '#e0e0e0',
   },
   BLUE_ICE: {
-    primary: '#7dd3fc', // Sky 300
-    secondary: '#3b82f6', // Blue 500
-    accent: '#c084fc', // Purple 400
-    bg: '#020617', // Slate 950
-    panel: 'rgba(10, 20, 30, 0.6)',
-    text: '#f0f9ff',
+    primary: '#38bdf8', // Sky 400
+    secondary: '#818cf8', // Indigo 400
+    accent: '#e0f2fe', // Sky 100
+    bg: '#081018',
+    panel: 'rgba(10, 20, 30, 0.8)',
+    text: '#e0e0e0',
   },
 };
 
