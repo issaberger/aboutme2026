@@ -53,10 +53,10 @@ const App = () => {
     
     // Dynamic Title Update for SERP Visibility
     const titleMap: Record<string, string> = {
-      home: 'Digital Systems Engineer & IT Specialist',
+      home: 'AI Engineer & Digital Systems Specialist',
       dossier: 'Bio & Resume',
-      projects: 'Projects & Case Studies',
-      services: 'IT Support & Web Services',
+      projects: 'AI Projects & Case Studies',
+      services: 'AI Engineering & IT Services',
       intel: 'Tech News & Global Intel',
       market: 'Market Dashboard',
       arcade: 'Arcade Simulation',

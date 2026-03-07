@@ -8,6 +8,7 @@ import { Menu, Palette, Wifi, Activity, Battery, Clock, Sun, Moon } from 'lucide
 import Cursor from './Cursor';
 import BootSequence from './BootSequence';
 import MatrixBackground from './MatrixBackground';
+import FloatingIcons from './FloatingIcons';
 
 // Fix: Cast motion.div to any to avoid TypeScript errors
 const MotionDiv = motion.div as any;
@@ -117,124 +118,126 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
   }
 
   return (
-    <div style={styleVars} className={`fixed inset-0 overflow-hidden bg-bg text-[var(--color-text)] transition-colors duration-500 font-sans ${!proMode ? 'font-cyber' : ''}`}>
+    <div style={styleVars} className={`fixed inset-0 overflow-hidden bg-bg text-[var(--color-text)] transition-colors duration-700 font-body selection:bg-primary/20`}>
       <Cursor />
       
-      {/* Background Effects */}
-      {!proMode && themeMode === 'dark' && <MatrixBackground />}
-      {!proMode && <div className="absolute inset-0 pointer-events-none z-50 scanlines opacity-10" />}
-      {!proMode && <div className="absolute inset-0 pointer-events-none z-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/5 via-bg to-bg" />}
+      {/* Background Effects - Subtle & Modern */}
+      {!proMode && themeMode === 'dark' && (
+        <>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(var(--color-secondary-rgb),0.15),transparent_50%)] opacity-40 pointer-events-none" />
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] pointer-events-none mix-blend-overlay" />
+          <FloatingIcons />
+        </>
+      )}
+      
+      {/* Light mode background icons */}
+      {!proMode && themeMode === 'light' && (
+         <FloatingIcons />
+      )}
 
-      {/* Top Bar */}
-      <header className={`fixed top-0 left-0 right-0 h-16 border-b z-40 flex items-center justify-between px-6 backdrop-blur-md transition-colors ${themeMode === 'light' ? 'bg-white/80 border-gray-200' : 'bg-black/80 border-gray-800'}`}>
-        <div className="flex items-center gap-4">
-          <div 
-             className="w-8 h-8 bg-primary rounded-sm flex items-center justify-center font-black text-bg cursor-pointer hover:animate-pulse"
-             onClick={() => onNavigate('home')}
-          >
-            IB
+      {/* Top Bar - Floating & Glass */}
+      <header className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-5xl px-4">
+        <div className={`rounded-2xl border border-white/10 backdrop-blur-xl shadow-2xl flex items-center justify-between px-6 py-3 transition-all duration-300 ${themeMode === 'light' ? 'bg-white/70' : 'bg-black/40'}`}>
+          
+          <div className="flex items-center gap-4 cursor-pointer group" onClick={() => onNavigate('home')}>
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-black border border-white/10 flex items-center justify-center group-hover:border-primary/50 transition-colors">
+               <span className="font-bold text-xs text-white font-sans">IB</span>
+            </div>
+            <div className="hidden sm:flex flex-col">
+               <span className="text-xs font-bold tracking-wide font-sans">ISSA BERGER</span>
+               <span className="text-[9px] opacity-50 font-mono tracking-wider">AI ENGINEER</span>
+            </div>
           </div>
-          <span className="hidden lg:block font-mono text-xs opacity-60">
-             ISSA_OS // SYSTEM READY
-          </span>
-        </div>
 
-        <nav className={`hidden md:flex items-center gap-1 p-1 rounded-full border transition-colors ${themeMode === 'light' ? 'bg-gray-100 border-gray-300' : 'bg-black/20 border-gray-800'}`}>
-          {NAV_ITEMS.map(item => (
-            <button
-              key={item.id}
-              onClick={() => onNavigate(item.id)}
-              className={`px-3 lg:px-4 py-1.5 rounded-full text-[10px] lg:text-xs uppercase font-bold tracking-wider transition-all ${
-                activeModule === item.id 
-                  ? 'bg-primary text-black shadow-[0_0_15px_var(--color-primary)]' 
-                  : 'hover:text-primary hover:bg-black/5'
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        <div className="flex items-center gap-4">
-           {/* Theme Toggle */}
-           <button onClick={toggleThemeMode} className="p-2 hover:text-primary transition-colors">
-             {themeMode === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-           </button>
-
-           {/* Palette Toggle */}
-           <div className="relative">
-              <button onClick={() => setPaletteOpen(!paletteOpen)} className="p-2 hover:text-primary transition-colors">
-                <Palette size={20} />
+          <nav className="hidden md:flex items-center gap-1">
+            {NAV_ITEMS.map(item => (
+              <button
+                key={item.id}
+                onClick={() => onNavigate(item.id)}
+                className={`relative px-4 py-2 rounded-lg text-xs font-medium transition-all duration-300 font-sans ${
+                  activeModule === item.id 
+                    ? 'text-white bg-white/10 shadow-inner' 
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                {item.label}
+                {activeModule === item.id && (
+                  <MotionDiv 
+                    layoutId="nav-pill"
+                    className="absolute inset-0 rounded-lg border border-white/10 pointer-events-none"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
               </button>
-              {paletteOpen && (
-                <div className={`absolute top-full right-0 mt-2 border p-2 rounded-lg w-40 space-y-2 shadow-xl ${themeMode === 'light' ? 'bg-white border-gray-200 text-gray-800' : 'bg-gray-900 border-gray-700 text-white'}`}>
-                   {Object.keys(PALETTES).map((p) => (
-                      <button
-                        key={p}
-                        onClick={() => { setPalette(p as PaletteName); setPaletteOpen(false); }}
-                        className={`w-full text-left px-2 py-1 text-xs rounded flex items-center gap-2 ${themeMode === 'light' ? 'hover:bg-gray-100' : 'hover:bg-gray-800'}`}
-                      >
-                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: PALETTES[p as PaletteName].primary }} />
-                         {p.replace('_', ' ')}
-                      </button>
-                   ))}
-                </div>
-              )}
-           </div>
+            ))}
+          </nav>
 
-           {/* Pro Mode Switch */}
-           <button 
-             onClick={toggleProMode}
-             className={`text-[10px] md:text-xs font-mono border px-2 py-1 rounded transition-all ${proMode ? 'bg-white text-black border-white' : 'border-gray-600 text-gray-500'}`}
-           >
-             {proMode ? 'PRO ON' : 'PRO OFF'}
-           </button>
+          <div className="flex items-center gap-3">
+             {/* Theme Toggle */}
+             <button onClick={toggleThemeMode} className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/5">
+               {themeMode === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+             </button>
 
-           {/* Mobile Menu Toggle */}
-           <button className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}>
-             <Menu />
-           </button>
+             {/* Palette Toggle */}
+             <div className="relative">
+                <button onClick={() => setPaletteOpen(!paletteOpen)} className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/5">
+                  <Palette size={16} />
+                </button>
+                {paletteOpen && (
+                  <div className="absolute top-full right-0 mt-4 border border-white/10 p-2 rounded-xl w-48 space-y-1 shadow-2xl bg-black/80 backdrop-blur-xl">
+                     {Object.keys(PALETTES).map((p) => (
+                        <button
+                          key={p}
+                          onClick={() => { setPalette(p as PaletteName); setPaletteOpen(false); }}
+                          className="w-full text-left px-3 py-2 text-xs rounded-lg flex items-center gap-3 hover:bg-white/10 transition-colors text-gray-300 hover:text-white font-sans"
+                        >
+                           <div className="w-2 h-2 rounded-full ring-1 ring-white/20" style={{ backgroundColor: PALETTES[p as PaletteName].primary }} />
+                           {p.replace('_', ' ')}
+                        </button>
+                     ))}
+                  </div>
+                )}
+             </div>
+
+             {/* Mobile Menu Toggle */}
+             <button className="md:hidden p-2 text-gray-400 hover:text-white" onClick={() => setMenuOpen(!menuOpen)}>
+               <Menu size={20} />
+             </button>
+          </div>
         </div>
       </header>
 
       {/* Main Content Area */}
-      <main className="absolute top-16 bottom-8 left-0 right-0 overflow-hidden z-10">
+      <main className="absolute inset-0 pt-28 pb-12 px-4 md:px-8 overflow-hidden z-10">
         <AnimatePresence mode='wait'>
           <MotionDiv
             key={activeModule}
-            initial={{ opacity: 0, x: 10, filter: 'blur(5px)' }}
-            animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, x: -10, filter: 'blur(5px)' }}
-            transition={{ duration: 0.2, ease: "circOut" }}
-            className="h-full w-full"
+            initial={{ opacity: 0, scale: 0.98, filter: 'blur(10px)' }}
+            animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, scale: 1.02, filter: 'blur(10px)' }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="h-full w-full max-w-7xl mx-auto"
           >
             {children}
           </MotionDiv>
         </AnimatePresence>
       </main>
 
-      {/* System Footer Status Bar */}
-      <footer className={`fixed bottom-0 left-0 right-0 h-8 border-t backdrop-blur flex items-center justify-between px-4 text-[10px] font-mono z-50 select-none ${themeMode === 'light' ? 'bg-white/90 border-gray-300 text-gray-500' : 'bg-black/90 border-gray-800 text-gray-500'}`}>
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5 text-primary animate-pulse">
-               <div className="w-1.5 h-1.5 rounded-full bg-primary" /> ONLINE
+      {/* System Footer - Minimal */}
+      <footer className="fixed bottom-4 left-1/2 -translate-x-1/2 w-full max-w-7xl px-6 flex items-center justify-between text-[10px] font-mono opacity-40 hover:opacity-100 transition-opacity duration-500 z-40 pointer-events-none">
+          <div className="flex items-center gap-6">
+            <span className="flex items-center gap-2">
+               <div className={`w-1.5 h-1.5 rounded-full ${booted ? 'bg-emerald-500' : 'bg-red-500'}`} /> 
+               SYSTEM_READY
             </span>
-            <span className="hidden md:inline">CPU: 14%</span>
-            <span className="hidden md:inline">MEM: 64TB</span>
+            <span className="hidden md:inline">LATENCY: 12ms</span>
           </div>
           
-          <div className="absolute left-1/2 -translate-x-1/2 opacity-50 hidden sm:block">
-             © 2026 ISSA BERGER SYSTEMS // CREATED BY ISSA BERGER
-          </div>
-
-          <div className="flex items-center gap-4">
-             <div className="flex items-center gap-1">
-                <Wifi size={10} /> 10Gbps
+          <div className="flex items-center gap-6">
+             <div className="flex items-center gap-2">
+                <Wifi size={10} /> 5G
              </div>
-             <div className="flex items-center gap-1">
-                <Battery size={10} /> 100%
-             </div>
-             <div className="flex items-center gap-1 opacity-80">
+             <div className="flex items-center gap-2">
                 <Clock size={10} /> {time}
              </div>
           </div>
@@ -251,9 +254,9 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
            >
               <div className="text-2xl">{recentAchievement.icon}</div>
               <div>
-                 <h4 className="text-primary font-bold text-sm">ACHIEVEMENT UNLOCKED</h4>
-                 <p className="font-bold">{recentAchievement.title}</p>
-                 <p className="opacity-60 text-xs">{recentAchievement.description}</p>
+                 <h4 className="text-primary font-bold text-sm font-sans">ACHIEVEMENT UNLOCKED</h4>
+                 <p className="font-bold font-sans">{recentAchievement.title}</p>
+                 <p className="opacity-60 text-xs font-mono">{recentAchievement.description}</p>
               </div>
            </MotionDiv>
         )}
@@ -269,7 +272,7 @@ const Shell: React.FC<ShellProps> = ({ children, activeModule, onNavigate }) => 
              <button
                key={item.id}
                onClick={() => { onNavigate(item.id); setMenuOpen(false); }}
-               className={`text-2xl font-bold uppercase tracking-widest hover:text-primary flex items-center gap-3 ${themeMode === 'light' ? 'text-black' : 'text-white'}`}
+               className={`text-2xl font-bold uppercase tracking-widest hover:text-primary flex items-center gap-3 font-sans ${themeMode === 'light' ? 'text-black' : 'text-white'}`}
              >
                <item.icon size={24} /> {item.label}
              </button>

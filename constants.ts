@@ -22,44 +22,44 @@ import {
 
 export const PALETTES: Record<PaletteName, ThemeColors> = {
   NEON_RAIN: {
-    primary: '#06b6d4', // Cyan 500
-    secondary: '#d946ef', // Fuchsia 500
-    accent: '#fde047', // Yellow 300
-    bg: '#050505',
-    panel: 'rgba(22, 22, 22, 0.8)',
-    text: '#e0e0e0',
+    primary: '#ffffff', // White for clean, high-end look
+    secondary: '#6366f1', // Indigo 500 for AI/Tech vibe
+    accent: '#10b981', // Emerald 500 for success
+    bg: '#030303', // Deep Void
+    panel: 'rgba(20, 20, 20, 0.6)',
+    text: '#f8fafc',
   },
   ACID_JUNGLE: {
-    primary: '#84cc16', // Lime 500
+    primary: '#bef264', // Lime 300
     secondary: '#10b981', // Emerald 500
     accent: '#facc15', // Yellow 400
-    bg: '#020602',
-    panel: 'rgba(10, 25, 10, 0.8)',
-    text: '#e0e0e0',
+    bg: '#050a05',
+    panel: 'rgba(10, 25, 10, 0.6)',
+    text: '#f0fdf4',
   },
   VIOLET_CIRCUIT: {
-    primary: '#8b5cf6', // Violet 500
-    secondary: '#3b82f6', // Blue 500
+    primary: '#c4b5fd', // Violet 300
+    secondary: '#8b5cf6', // Violet 500
     accent: '#f472b6', // Pink 400
-    bg: '#0b0014',
-    panel: 'rgba(20, 10, 30, 0.8)',
-    text: '#e0e0e0',
+    bg: '#05030a',
+    panel: 'rgba(20, 10, 30, 0.6)',
+    text: '#f5f3ff',
   },
   RED_ALERT: {
-    primary: '#ef4444', // Red 500
-    secondary: '#f97316', // Orange 500
-    accent: '#ffffff', // White
-    bg: '#1a0505',
-    panel: 'rgba(30, 10, 10, 0.8)',
-    text: '#e0e0e0',
+    primary: '#fca5a5', // Red 300
+    secondary: '#ef4444', // Red 500
+    accent: '#fb923c', // Orange 400
+    bg: '#0f0202',
+    panel: 'rgba(30, 10, 10, 0.6)',
+    text: '#fef2f2',
   },
   BLUE_ICE: {
-    primary: '#38bdf8', // Sky 400
-    secondary: '#818cf8', // Indigo 400
-    accent: '#e0f2fe', // Sky 100
-    bg: '#081018',
-    panel: 'rgba(10, 20, 30, 0.8)',
-    text: '#e0e0e0',
+    primary: '#7dd3fc', // Sky 300
+    secondary: '#3b82f6', // Blue 500
+    accent: '#c084fc', // Purple 400
+    bg: '#020617', // Slate 950
+    panel: 'rgba(10, 20, 30, 0.6)',
+    text: '#f0f9ff',
   },
 };
 
@@ -138,19 +138,52 @@ export const ACHIEVEMENTS_LIST: Achievement[] = [
 
 export const PROFILE = {
   name: 'Issa Berger',
-  title: 'Digital Systems Engineer',
+  title: 'AI Engineer & Digital Systems Specialist',
   location: 'Alexandria, VA',
   email: 'bergerissa@gmail.com',
   linkedin: 'https://www.linkedin.com/in/issaberger',
   taglines: [
-    'IT Support Specialist',
-    'Network & Cloud Fundamentals',
-    'Digital Systems Engineer',
-    'Web Developer'
+    'AI Engineer',
+    'Machine Learning Specialist',
+    'LLM Integration',
+    'Digital Systems Engineer'
   ]
 };
 
 export const PROJECTS: Project[] = [
+  {
+    id: 'ai-rag-system',
+    title: 'Enterprise RAG Knowledge Base',
+    category: 'AI Engineering',
+    description: 'Retrieval-Augmented Generation system for internal documentation.',
+    image: 'https://robohash.org/RAGSystem?set=set1&bgset=bg1&size=600x600',
+    problem: 'Employees spent excessive time searching through scattered PDF and Notion documentation.',
+    actions: [
+      'Built a vector database using Pinecone to index internal docs.',
+      'Developed a Python-based RAG pipeline using LangChain and OpenAI API.',
+      'Created a React frontend for natural language querying.'
+    ],
+    tools: ['Python', 'LangChain', 'Pinecone', 'OpenAI', 'React'],
+    outcome: 'Reduced information retrieval time by 90% and increased employee productivity.',
+    stats: [{ label: 'Retrieval Speed', value: '10x' }],
+    link: '#'
+  },
+  {
+    id: 'predictive-maintenance',
+    title: 'IoT Predictive Maintenance Model',
+    category: 'Machine Learning',
+    description: 'ML model to predict hardware failure in server racks.',
+    image: 'https://robohash.org/PredictiveMaintenance?set=set1&bgset=bg1&size=600x600',
+    problem: 'Unexpected server failures caused costly downtime and data migration delays.',
+    actions: [
+      'Collected telemetry data (temp, fan speed, CPU load) from 500+ nodes.',
+      'Trained a Random Forest classifier to predict failure probability.',
+      'Integrated alerts into the existing monitoring dashboard.'
+    ],
+    tools: ['Python', 'Scikit-Learn', 'Pandas', 'Grafana'],
+    outcome: 'Predicted 85% of hardware failures 48 hours in advance.',
+    stats: [{ label: 'Accuracy', value: '85%' }]
+  },
   {
     id: 'axiom-ticket',
     title: 'Desktop Support Ticket Resolution',
@@ -169,21 +202,6 @@ export const PROJECTS: Project[] = [
     link: '#'
   },
   {
-    id: 'field-ops',
-    title: 'On-Site Field Support & Hardware Swap',
-    category: 'Field Support',
-    description: 'Large-scale hardware refresh for enterprise client.',
-    image: 'https://robohash.org/OnSiteFieldSupport?set=set1&bgset=bg1&size=600x600',
-    problem: 'Client needed to upgrade 50+ workstations over a weekend without disrupting Monday operations.',
-    actions: [
-      'Coordinated logistics and staging of new units.',
-      'Performed disk imaging and data migration using standardized ISOs.',
-      'Cable management and peripheral testing post-installation.'
-    ],
-    tools: ['Clonezilla', 'Cable Management', 'Asset Tagging'],
-    outcome: '100% successful deployment with zero downtime for Monday start.'
-  },
-  {
     id: 'm365-setup',
     title: 'M365 & User Administration',
     category: 'Cloud Fundamentals',
@@ -200,21 +218,6 @@ export const PROJECTS: Project[] = [
     link: 'https://microsoft.com'
   },
   {
-    id: 'asset-compliance',
-    title: 'Asset Inventory & SLA Compliance',
-    category: 'IT Management',
-    description: 'Tracking system for hardware lifecycle management.',
-    image: 'https://robohash.org/AssetInventorySLACompliance?set=set1&bgset=bg1&size=600x600',
-    problem: 'Lost track of valuable hardware assets and warranty expirations.',
-    actions: [
-      'Deployed Snipe-IT for asset tracking.',
-      'Barcoded all physical equipment.',
-      'Set up automated alerts for warranty expiration.'
-    ],
-    tools: ['Snipe-IT', 'Excel', 'Barcode Scanner'],
-    outcome: ' recovered $5k in lost assets and ensured 100% SLA compliance.'
-  },
-  {
     id: 'solution-edu',
     title: 'Solution Education Platform',
     category: 'Web Design',
@@ -229,25 +232,16 @@ export const PROJECTS: Project[] = [
     tools: ['WordPress', 'CSS3', 'PHP'],
     outcome: 'Increased student engagement time by 50%.',
     link: 'https://solutioneducation.net'
-  },
-  {
-    id: 'tutoring-sys',
-    title: 'Tutoring Workflow System',
-    category: 'Systems Support',
-    description: 'Scheduling and resource management for SEN tutoring.',
-    image: 'https://robohash.org/TutoringWorkflowSystem?set=set1&bgset=bg1&size=600x600',
-    problem: 'Manual scheduling led to conflicts and missed sessions.',
-    actions: [
-      'Integrated calendar API for automated booking.',
-      'Created a digital repository for teaching materials.',
-      'Set up automated reminders for students and parents.'
-    ],
-    tools: ['Google Workspace', 'Zapier', 'Notion'],
-    outcome: 'Eliminated scheduling conflicts and improved session attendance.'
   }
 ];
 
 export const SERVICES: Service[] = [
+  {
+    id: 'ai-engineering',
+    title: 'AI Engineering & LLM Integration',
+    icon: 'Cpu',
+    description: 'Custom RAG pipelines, fine-tuning LLMs, and integrating AI agents into business workflows.'
+  },
   {
     id: 'desktop-support',
     title: 'Desktop & End-User Support',
@@ -274,9 +268,9 @@ export const SERVICES: Service[] = [
   },
   {
     id: 'web',
-    title: 'Web Design & Consulting',
+    title: 'AI-Powered Web Development',
     icon: 'Code',
-    description: 'Modern, responsive web development and technical consultation for small businesses.'
+    description: 'Modern, responsive web apps integrated with intelligent backend services.'
   }
 ];
 
@@ -293,6 +287,17 @@ export const JOBS: Job[] = [
     ]
   },
   {
+    id: 'freelance',
+    role: 'AI Engineer & Web Developer',
+    company: 'Freelance',
+    period: '2020 – Present',
+    description: [
+      'Developing custom AI solutions and RAG pipelines for clients.',
+      'Designed and deployed custom websites with intelligent features.',
+      'Provided ongoing maintenance and technical SEO.'
+    ]
+  },
+  {
     id: 'quisqueya',
     role: 'Admin Support',
     company: 'Quisqueya University',
@@ -300,16 +305,6 @@ export const JOBS: Job[] = [
     description: [
       'Maintained administrative digital records and databases.',
       'Supported faculty with technical equipment setup.'
-    ]
-  },
-  {
-    id: 'freelance',
-    role: 'Web Developer',
-    company: 'Freelance',
-    period: '2020 – Present',
-    description: [
-      'Designed and deployed custom websites for clients.',
-      'Provided ongoing maintenance and technical SEO.'
     ]
   }
 ];

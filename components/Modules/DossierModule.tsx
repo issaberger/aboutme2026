@@ -42,7 +42,7 @@ const DossierModule = () => {
         output = <div className="text-gray-400">Commands: identity, stats, clear</div>;
         break;
       case 'identity':
-        output = <p>Subject 491-IB. Specialist in Digital Infrastructure and User Logistics.</p>;
+        output = <p>Subject 491-IB. Specialist in AI Engineering, Machine Learning, and Digital Infrastructure.</p>;
         break;
       case 'stats':
         output = <p>Productivity: 114% | Latency: 5ms | Reliability: CRITICAL_SUCCESS</p>;
@@ -124,7 +124,7 @@ const DossierModule = () => {
               <Cpu size={12} className="text-primary"/> Neural Upgrades
            </h3>
            <div className="flex flex-wrap gap-1.5 md:gap-2">
-              {['Active Directory', 'M365 Admin', 'Azure AD', 'Hardware', 'React', 'TS', 'Networking'].map(skill => (
+              {['Python', 'PyTorch', 'LLMs', 'RAG', 'LangChain', 'React', 'Azure', 'Networking'].map(skill => (
                 <span key={skill} className="px-1.5 py-0.5 md:px-2 md:py-1 bg-primary/5 border border-primary/20 rounded text-[9px] md:text-[10px] text-primary/80 uppercase hover:border-primary hover:text-primary cursor-default transition-all">
                    {skill}
                 </span>
@@ -199,11 +199,11 @@ const DossierModule = () => {
               <Award className="text-gray-500 md:w-5 md:h-5" size={18} />
             </div>
             <div className="bg-primary/5 border border-primary/10 p-4 md:p-6 rounded-lg shadow-inner">
-              <h3 className="text-base md:text-lg font-bold text-white leading-tight">Career Diploma in Web Page Design</h3>
-              <p className="text-gray-400 text-xs md:text-sm mt-1">Pennfoster Career School | 2018 – 2021</p>
+              <h3 className="text-base md:text-lg font-bold text-white leading-tight">AI Engineering & Computer Science</h3>
+              <p className="text-gray-400 text-xs md:text-sm mt-1">Self-Taught / Certifications | 2023 – Present</p>
               
               <div className="mt-4 flex flex-wrap gap-1.5 md:gap-2">
-                {['CCNA (In Progress)', 'CompTIA A+', 'Azure Fundamentals'].map(c => (
+                {['Cisco CCNA', 'Microsoft Intune', 'Microsoft Azure', 'Cisco AI Practitioner', 'Certified Prompt Engineering'].map(c => (
                   <span key={c} className="text-[9px] md:text-[10px] bg-black/40 px-1.5 py-0.5 md:px-2 md:py-1 rounded text-gray-500 border border-gray-800">
                     {c}
                   </span>
