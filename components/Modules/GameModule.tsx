@@ -742,7 +742,7 @@ const TechTrivia = ({ onBack }: { onBack: () => void }) => {
                          </div>
                          <div className="bg-gray-800 p-3 rounded">
                              <div className="text-gray-500 text-xs">QUESTIONS</div>
-                             <div className="font-bold text-white">10 / 10</div>
+                             <div className="font-bold text-white">{currentQuestions.length}</div>
                          </div>
                     </div>
 
@@ -1092,13 +1092,18 @@ const NeuralTyper = ({ onBack }: { onBack: () => void }) => {
               if (w.y > canvas.height) { state.isPlaying = false; setGameState('GAME_OVER'); updateHighScore(state.score); }
               return w.y <= canvas.height;
           });
-          state.projectiles.forEach((p, i) => {
+          for (let i = state.projectiles.length - 1; i >= 0; i--) {
+               const p = state.projectiles[i];
                const dx = p.targetX - p.x, dy = p.targetY - p.y;
                const dist = Math.sqrt(dx*dx + dy*dy);
                if (dist < p.speed) state.projectiles.splice(i, 1);
                else { p.x += (dx/dist)*p.speed; p.y += (dy/dist)*p.speed; }
-          });
-          state.particles.forEach((p, i) => { p.x += p.vx; p.y += p.vy; p.life -= 0.05; if (p.life <= 0) state.particles.splice(i, 1); });
+          }
+          for (let i = state.particles.length - 1; i >= 0; i--) {
+              const p = state.particles[i];
+              p.x += p.vx; p.y += p.vy; p.life -= 0.05;
+              if (p.life <= 0) state.particles.splice(i, 1);
+          }
 
           ctx.fillStyle = colors.bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
           ctx.strokeStyle = `${colors.primary}10`;
@@ -1706,13 +1711,14 @@ const CyberPac = ({ onBack }: { onBack: () => void }) => {
             });
 
             // Particles
-            state.particles.forEach((p, i) => {
+            for (let i = state.particles.length - 1; i >= 0; i--) {
+                const p = state.particles[i];
                 ctx.fillStyle = p.color;
-                ctx.globalAlpha = p.life;
+                ctx.globalAlpha = Math.max(0, p.life);
                 ctx.beginPath(); ctx.arc(p.x, p.y, 0.1, 0, Math.PI*2); ctx.fill();
                 p.x += p.vx; p.y += p.vy; p.life -= 0.05;
                 if(p.life<=0) state.particles.splice(i,1);
-            });
+            }
             ctx.globalAlpha = 1;
 
             // Player

@@ -80,11 +80,13 @@ const ProjectsModule = () => {
                      <>
                         <img 
                           src={project.image} 
+                          alt=""
                           className="absolute inset-0 w-full h-full object-cover opacity-0 glitch-layer-1 z-20 mix-blend-screen pointer-events-none"
                           aria-hidden="true"
                         />
                         <img 
                           src={project.image} 
+                          alt=""
                           className="absolute inset-0 w-full h-full object-cover opacity-0 glitch-layer-2 z-20 mix-blend-screen pointer-events-none"
                           aria-hidden="true"
                         />

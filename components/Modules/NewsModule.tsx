@@ -20,11 +20,11 @@ interface NewsItem extends HNStory {
 }
 
 const CATEGORIES = [
-  { id: 'all', label: 'GLOBAL_FEED', icon: Globe, color: 'text-blue-400', border: 'border-blue-400' },
-  { id: 'ai', label: 'NEURAL_NET', icon: Cpu, color: 'text-purple-400', border: 'border-purple-400' },
-  { id: 'security', label: 'NET_SEC', icon: ShieldAlert, color: 'text-red-400', border: 'border-red-400' },
-  { id: 'hardware', label: 'HARDWARE', icon: Zap, color: 'text-yellow-400', border: 'border-yellow-400' },
-  { id: 'dev', label: 'DEV_OPS', icon: Terminal, color: 'text-green-400', border: 'border-green-400' },
+  { id: 'all', label: 'GLOBAL_FEED', icon: Globe, color: 'text-blue-400', activeBorder: 'border-blue-500/50', activeBg: 'bg-blue-500/10' },
+  { id: 'ai', label: 'NEURAL_NET', icon: Cpu, color: 'text-purple-400', activeBorder: 'border-purple-500/50', activeBg: 'bg-purple-500/10' },
+  { id: 'security', label: 'NET_SEC', icon: ShieldAlert, color: 'text-red-400', activeBorder: 'border-red-500/50', activeBg: 'bg-red-500/10' },
+  { id: 'hardware', label: 'HARDWARE', icon: Zap, color: 'text-yellow-400', activeBorder: 'border-yellow-500/50', activeBg: 'bg-yellow-500/10' },
+  { id: 'dev', label: 'DEV_OPS', icon: Terminal, color: 'text-green-400', activeBorder: 'border-green-500/50', activeBg: 'bg-green-500/10' },
 ];
 
 const KEYWORDS: Record<string, string[]> = {
@@ -125,12 +125,12 @@ const NewsModule = () => {
               onClick={() => setActiveCat(cat.id)}
               className={`flex items-center gap-3 px-4 py-3 rounded text-[10px] md:text-xs font-bold uppercase transition-all border whitespace-nowrap md:whitespace-normal group relative overflow-hidden ${
                 activeCat === cat.id 
-                  ? `bg-black/5 ${themeMode === 'light' ? 'border-gray-300 shadow-sm' : `border-${cat.color.split('-')[1]}-500/50 text-white shadow-[0_0_15px_rgba(255,255,255,0.1)]`}`
+                  ? `bg-black/5 ${themeMode === 'light' ? 'border-gray-300 shadow-sm' : `${cat.activeBorder} text-white shadow-[0_0_15px_rgba(255,255,255,0.1)]`}`
                   : 'bg-transparent border-transparent opacity-60 hover:opacity-100 hover:bg-black/5'
               }`}
             >
               {activeCat === cat.id && themeMode === 'dark' && (
-                 <MotionDiv layoutId="activeGlow" className={`absolute inset-0 bg-${cat.color.split('-')[1]}-500/10`} />
+                 <MotionDiv layoutId="activeGlow" className={`absolute inset-0 ${cat.activeBg}`} />
               )}
               {activeCat === cat.id && themeMode === 'light' && (
                  <MotionDiv layoutId="activeGlowLight" className="absolute inset-0 bg-gray-200" />

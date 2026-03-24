@@ -132,6 +132,7 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     bg: themeMode === 'light' ? '#f8fafc' : rawColors.bg, // Slate 50 for light mode
     panel: themeMode === 'light' ? 'rgba(255, 255, 255, 0.85)' : rawColors.panel,
     text: themeMode === 'light' ? '#0f172a' : rawColors.text, // Slate 900 for light mode
+    primary: themeMode === 'light' && palette === 'NEON_RAIN' ? '#0ea5e9' : rawColors.primary, // Darker cyan for light mode visibility
   };
 
   return (
