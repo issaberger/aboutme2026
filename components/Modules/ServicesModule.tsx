@@ -7,7 +7,7 @@ import { useSystem } from '../../context/SystemContext';
 // Fix: Cast motion.div to any to avoid TypeScript errors
 const MotionDiv = motion.div as any;
 
-const ServicesModule = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
+const ServicesModule = () => {
   const { colors, proMode } = useSystem();
 
   return (
@@ -40,9 +40,7 @@ const ServicesModule = ({ onNavigate }: { onNavigate: (path: string) => void }) 
               </p>
 
               <div className="mt-6 pt-4 border-t border-gray-800 flex justify-end">
-                 <button 
-                   onClick={() => onNavigate('contact')}
-                   className="text-xs font-bold uppercase tracking-wider text-primary hover:text-white transition-colors flex items-center gap-1">
+                 <button className="text-xs font-bold uppercase tracking-wider text-primary hover:text-white transition-colors flex items-center gap-1">
                     Request Details <Icons.ArrowRight size={12} />
                  </button>
               </div>

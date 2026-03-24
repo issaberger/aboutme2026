@@ -55,7 +55,7 @@ const DossierModule = () => {
         output = <span className="text-red-500">Error: Command "{cmd}" unrecognized.</span>;
     }
 
-    setHistory(prev => [...prev, { cmd: input, output }]);
+    setHistory([...history, { cmd: input, output }]);
     setInput('');
   };
 
@@ -127,20 +127,6 @@ const DossierModule = () => {
               {['Python', 'PyTorch', 'LLMs', 'RAG', 'LangChain', 'React', 'Azure', 'Networking'].map(skill => (
                 <span key={skill} className="px-1.5 py-0.5 md:px-2 md:py-1 bg-primary/5 border border-primary/20 rounded text-[9px] md:text-[10px] text-primary/80 uppercase hover:border-primary hover:text-primary cursor-default transition-all">
                    {skill}
-                </span>
-              ))}
-           </div>
-        </div>
-
-        {/* Certifications */}
-        <div className="space-y-3 pb-2">
-           <h3 className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
-              <Shield size={12} className="text-primary"/> Certifications
-           </h3>
-           <div className="flex flex-wrap gap-1.5 md:gap-2">
-              {['Cisco CCNA', 'Microsoft Intune', 'Microsoft Azure', 'Cisco AI Practitioner', 'Certified Prompt Engineering'].map(cert => (
-                <span key={cert} className="px-1.5 py-0.5 md:px-2 md:py-1 bg-secondary/5 border border-secondary/20 rounded text-[9px] md:text-[10px] text-secondary/80 uppercase hover:border-secondary hover:text-secondary cursor-default transition-all">
-                   {cert}
                 </span>
               ))}
            </div>

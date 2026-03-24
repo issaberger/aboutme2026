@@ -92,7 +92,7 @@ const App = () => {
       if (JSON.stringify(buffer) === JSON.stringify(konami)) {
          unlockAchievement('hacker');
          setOverclocked(true);
-         console.log('OVERCLOCK MODE ACTIVATED');
+         alert('OVERCLOCK MODE ACTIVATED'); // Simple feedback
          buffer = [];
       }
     };
@@ -118,7 +118,7 @@ const App = () => {
         {activeModule === 'home' && <HomeModule onNavigate={setActiveModule} />}
         {activeModule === 'dossier' && <DossierModule />}
         {activeModule === 'projects' && <ProjectsModule />}
-        {activeModule === 'services' && <ServicesModule onNavigate={setActiveModule} />}
+        {activeModule === 'services' && <ServicesModule />}
         {activeModule === 'intel' && <NewsModule />}
         {activeModule === 'contact' && <ContactModule />}
         

@@ -31,8 +31,10 @@ const AboutModule = () => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [history]);
 
-  const executeCommand = (cmdStr: string) => {
-    const cmd = cmdStr.trim().toLowerCase();
+  const handleCommand = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cmd = input.trim().toLowerCase();
+    
     let output: React.ReactNode;
 
     switch (cmd) {
@@ -78,7 +80,7 @@ const AboutModule = () => {
       case 'certs':
         output = (
            <div className="flex flex-wrap gap-4">
-              {['CCNA', 'Network+', 'AWS Cloud Practitioner', 'Microsoft Azure', 'Microsoft Intune', 'Cisco AI Practitioner', 'Certified Prompt Engineering'].map(c => (
+              {['CCNA', 'Network+', 'AWS Cloud Practitioner', 'Azure Fundamentals'].map(c => (
                   <div key={c} className="border border-primary px-2 py-1 text-xs rounded bg-primary/10 flex items-center gap-2">
                       <Award size={12} /> {c}
                   </div>
@@ -112,17 +114,13 @@ const AboutModule = () => {
         output = <span className="text-red-500">Command not found: {cmd}</span>;
     }
 
-    setHistory(prev => [...prev, { cmd, output }]);
+    setHistory([...history, { cmd: input, output }]);
     setInput('');
   };
 
-  const handleCommand = (e: React.FormEvent) => {
-    e.preventDefault();
-    executeCommand(input);
-  };
-
   const quickAction = (cmd: string) => {
-    executeCommand(cmd);
+    setInput(cmd);
+    // Simulate enter press logic if needed, or just set input
   };
 
   return (
