@@ -508,17 +508,19 @@ const Question = ({ num, label, helper, required, children, isDark }: any) => (
     </div>
 );
 
-const TextInput = ({ isDark, className = "", ...props }: any) => (
+const TextInput = ({ isDark, className = "", onChange, ...props }: any) => (
     <input 
         {...props} 
+        onChange={e => onChange && onChange(e.target.value)}
         className={`w-full px-5 py-4 rounded-xl border outline-none disabled:opacity-50 transition-all font-medium text-base ${isDark ? 'bg-[#1a1a1a] border-gray-700 text-white placeholder:text-gray-600 focus:border-blue-500' : 'bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 shadow-sm'} ${className}`} 
     />
 );
 
-const TextArea = ({ isDark, className = "", ...props }: any) => (
+const TextArea = ({ isDark, className = "", onChange, ...props }: any) => (
     <textarea 
         rows={4} 
         {...props} 
+        onChange={e => onChange && onChange(e.target.value)}
         className={`w-full px-5 py-4 rounded-xl border outline-none disabled:opacity-50 transition-all font-medium text-base resize-y ${isDark ? 'bg-[#1a1a1a] border-gray-700 text-white placeholder:text-gray-600 focus:border-blue-500' : 'bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 shadow-sm'} ${className}`} 
     />
 );
