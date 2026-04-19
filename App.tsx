@@ -6,6 +6,7 @@ import ProjectsModule from './components/Modules/ProjectsModule';
 import ServicesModule from './components/Modules/ServicesModule';
 import NewsModule from './components/Modules/NewsModule';
 import ContactModule from './components/Modules/ContactModule';
+import OnboardingModule from './components/Modules/OnboardingModule';
 import CommandPalette from './components/Layout/CommandPalette';
 import { useSystem } from './context/SystemContext';
 
@@ -20,7 +21,7 @@ const App = () => {
       if (typeof window !== 'undefined' && window.location && window.location.search) {
         const params = new URLSearchParams(window.location.search);
         const section = params.get('section');
-        const validModules = ['home', 'dossier', 'projects', 'services', 'intel', 'market', 'arcade', 'contact'];
+        const validModules = ['home', 'dossier', 'projects', 'onboarding', 'services', 'intel', 'market', 'arcade', 'contact'];
         if (section && validModules.includes(section)) {
           return section;
         }
@@ -56,6 +57,7 @@ const App = () => {
       home: 'AI Engineer & Digital Systems Specialist',
       dossier: 'Bio & Resume',
       projects: 'AI Projects & Case Studies',
+      onboarding: 'Client Questionnaire',
       services: 'AI Engineering & IT Services',
       intel: 'Tech News & Global Intel',
       market: 'Market Dashboard',
@@ -118,6 +120,7 @@ const App = () => {
         {activeModule === 'home' && <HomeModule onNavigate={setActiveModule} />}
         {activeModule === 'dossier' && <DossierModule />}
         {activeModule === 'projects' && <ProjectsModule />}
+        {activeModule === 'onboarding' && <OnboardingModule />}
         {activeModule === 'services' && <ServicesModule />}
         {activeModule === 'intel' && <NewsModule />}
         {activeModule === 'contact' && <ContactModule />}

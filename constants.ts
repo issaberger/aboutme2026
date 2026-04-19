@@ -140,7 +140,7 @@ export const PROFILE = {
   name: 'Issa Berger',
   title: 'AI Engineer & Digital Systems Specialist',
   location: 'Alexandria, VA',
-  email: 'bergerissa@gmail.com',
+  email: 'tech@issaberger.com',
   linkedin: 'https://www.linkedin.com/in/issaberger',
   taglines: [
     'AI Engineer',
