@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSystem } from '../../context/SystemContext';
-import { Send, CheckCircle2, Copy, FileText, Globe, Activity, Monitor, ArrowRight, Zap } from 'lucide-react';
+import { Send, CheckCircle2, Copy, FileText, Globe, Activity, Monitor, ArrowRight, Zap, Info } from 'lucide-react';
 import { PROFILE } from '../../constants';
 
 const OnboardingModule = () => {
