@@ -10,6 +10,7 @@ export default {
         mono: ['"JetBrains Mono"', 'monospace'],
         cyber: ['"Rajdhani"', 'sans-serif'],
         sans: ['"Inter"', 'sans-serif'],
+        heading: ['"Space Grotesk"', 'sans-serif'],
       },
       colors: {
         primary: 'var(--color-primary)',
