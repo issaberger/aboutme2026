@@ -1,131 +1,172 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useSystem } from '../../context/SystemContext';
 import { PROFILE, NAV_ITEMS } from '../../constants';
-import { ArrowRight, Sparkles, Code2, BrainCircuit, Globe2 } from 'lucide-react';
+import CyberButton from '../ui/CyberButton';
+import { ArrowRight, FileText, Mail, Grid } from 'lucide-react';
+
+// Fix: Cast motion components to any to avoid TypeScript errors with framer-motion props
+const MotionDiv = motion.div as any;
+const MotionSpan = motion.span as any;
+const MotionH2 = motion.h2 as any;
+const MotionButton = motion.button as any;
 
 const HomeModule = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
-  const { themeMode } = useSystem();
-  const isDark = themeMode === 'dark';
+  const { proMode, colors } = useSystem();
+  const [subtitleIndex, setSubtitleIndex] = useState(0);
 
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 }
-    }
-  };
-
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
-  };
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSubtitleIndex((prev) => (prev + 1) % PROFILE.taglines.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div className="h-full w-full flex flex-col items-center">
+    <div className="relative h-full flex flex-col items-center overflow-y-auto overflow-x-hidden p-6">
       
-      {/* Hero Header */}
-      <motion.div 
-        initial={{ opacity: 0, y: 30 }}
+      {/* Background Grid - WebGL Imitation */}
+      {!proMode && (
+        <div className="fixed inset-0 z-0 opacity-20 perspective-1000 pointer-events-none">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] [transform:rotateX(60deg)_scale(2)] origin-top animate-[pulse-fast_10s_infinite]" />
+          <MotionDiv 
+            className="absolute top-1/2 left-1/2 w-[600px] h-[600px] rounded-full blur-[100px]"
+            animate={{
+              background: [
+                `radial-gradient(circle, ${colors.primary}40 0%, transparent 70%)`,
+                `radial-gradient(circle, ${colors.secondary}40 0%, transparent 70%)`,
+                `radial-gradient(circle, ${colors.primary}40 0%, transparent 70%)`
+              ],
+              x: '-50%',
+              y: '-50%',
+              scale: [1, 1.2, 1]
+            }}
+            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </div>
+      )}
+
+      {/* Hero Section */}
+      <div className="relative z-10 max-w-4xl w-full text-center space-y-4 md:space-y-6 pt-10 md:pt-20 shrink-0">
+        
+        <MotionDiv
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="text-primary font-mono text-sm tracking-[0.5em] mb-4 uppercase">
+            System Online • v2.5.1
+          </div>
+          
+          <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-2 relative inline-block">
+            <span className={`relative z-10 ${!proMode ? 'glitch-text' : ''}`} data-text={PROFILE.name}>
+              {PROFILE.name.toUpperCase()}
+            </span>
+            {!proMode && (
+               <MotionSpan 
+                 className="absolute -inset-1 bg-primary/20 blur-xl -z-10"
+                 animate={{ opacity: [0.5, 0.8, 0.5] }}
+                 transition={{ duration: 2, repeat: Infinity }}
+               />
+            )}
+          </h1>
+
+          <div className="h-8 md:h-12 overflow-hidden mt-2">
+            <MotionH2
+              key={subtitleIndex}
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -20, opacity: 0 }}
+              className="text-lg md:text-2xl text-gray-400 font-mono"
+            >
+              {`> ${PROFILE.taglines[subtitleIndex]}`}
+            </MotionH2>
+          </div>
+        </MotionDiv>
+
+      </div>
+
+      {/* Module Grid - "Easier Navigation" */}
+      <MotionDiv
+        initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        className="w-full pt-16 pb-12 flex flex-col items-center text-center max-w-3xl"
+        transition={{ delay: 0.3 }}
+        className="relative z-10 w-full max-w-5xl mt-12 md:mt-20 pb-24"
       >
-        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-6 ${isDark ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-blue-50 text-blue-600 border border-blue-200'}`}>
-          <Sparkles size={14} /> AI Engineering & Systems
+        <div className="flex items-center gap-2 mb-6 text-gray-500 font-mono text-xs uppercase tracking-widest pl-2">
+           <Grid size={14} /> System Modules
+           <div className="h-[1px] bg-gray-800 flex-1" />
         </div>
-        
-        <h1 className="text-5xl md:text-7xl font-heading font-bold tracking-tight mb-6 leading-tight">
-          Building <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600">Intelligent</span><br />
-          Digital Systems.
-        </h1>
-        
-        <p className={`text-lg md:text-xl max-w-2xl font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-          I am {PROFILE.name}, specializing in LLM Integration, Full-Stack Architecture, and next-generation Web Experiences.
-        </p>
 
-        <div className="flex items-center gap-4 mt-8">
-          <button 
-            onClick={() => onNavigate('projects')}
-            className="px-6 py-3 rounded-full bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/25"
-          >
-            View Projects
-          </button>
-          <button 
-            onClick={() => onNavigate('contact')}
-            className={`px-6 py-3 rounded-full font-medium transition-colors border ${isDark ? 'bg-white/5 border-white/10 hover:bg-white/10 text-white' : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-900 shadow-sm'}`}
-          >
-            Contact Me
-          </button>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          {NAV_ITEMS.filter(item => item.id !== 'home').map((item, idx) => (
+             <MotionButton
+               key={item.id}
+               onClick={() => onNavigate(item.id)}
+               whileHover={{ scale: 1.02, y: -2 }}
+               whileTap={{ scale: 0.98 }}
+               className="group relative bg-gray-900/40 border border-gray-800 p-4 rounded-lg hover:border-primary/50 hover:bg-gray-800/60 transition-all text-left flex flex-col justify-between h-32 overflow-hidden"
+             >
+                {/* Hover Glow */}
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                
+                <div className="flex justify-between items-start">
+                   <item.icon className="text-gray-500 group-hover:text-primary transition-colors" size={24} />
+                   <ArrowRight size={16} className="text-gray-700 group-hover:text-primary -translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                </div>
+                
+                <div>
+                   <div className="font-bold text-white group-hover:text-primary transition-colors">{item.label}</div>
+                   <div className="text-[10px] text-gray-500 font-mono mt-1 group-hover:text-gray-400">{item.desc}</div>
+                </div>
+             </MotionButton>
+          ))}
         </div>
-      </motion.div>
+      </MotionDiv>
 
-      {/* Bento Grid */}
-      <motion.div 
-        variants={container}
-        initial="hidden"
-        animate="show"
-        className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-4 pb-24"
-      >
-        {/* Main Bento Box */}
-        <motion.div 
-          variants={item}
-          onClick={() => onNavigate('dossier')}
-          className={`md:col-span-2 row-span-2 group cursor-pointer rounded-3xl p-8 relative overflow-hidden border transition-all hover:scale-[1.02] ${isDark ? 'bg-[#101012] border-white/10 hover:border-blue-500/50' : 'bg-white border-gray-200 hover:border-blue-400 hover:shadow-xl shadow-sm'}`}
-        >
-          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-          <h3 className="text-3xl font-heading font-bold mb-2">My Dossier</h3>
-          <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>Explore my background, certifications, and experience in the AI field.</p>
-          <div className="absolute bottom-8 right-8 w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
-            <ArrowRight />
-          </div>
-        </motion.div>
-
-        {/* Small Bento 1 */}
-        <motion.div 
-          variants={item}
-          onClick={() => onNavigate('services')}
-          className={`group cursor-pointer rounded-3xl p-6 relative overflow-hidden border transition-all hover:scale-[1.02] flex flex-col justify-between min-h-[200px] ${isDark ? 'bg-[#101012] border-white/10 hover:border-purple-500/50' : 'bg-white border-gray-200 hover:border-purple-400 hover:shadow-xl shadow-sm'}`}
-        >
-          <BrainCircuit className={isDark ? 'text-purple-400' : 'text-purple-600'} size={32} />
-          <div>
-            <h3 className="text-xl font-heading font-bold mt-4">Services</h3>
-            <p className={`text-sm mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>AI Engineering & IT Support</p>
-          </div>
-        </motion.div>
-
-        {/* Small Bento 2 */}
-        <motion.div 
-          variants={item}
-          onClick={() => onNavigate('projects')}
-          className={`group cursor-pointer rounded-3xl p-6 relative overflow-hidden border transition-all hover:scale-[1.02] flex flex-col justify-between min-h-[200px] ${isDark ? 'bg-[#101012] border-white/10 hover:border-emerald-500/50' : 'bg-white border-gray-200 hover:border-emerald-400 hover:shadow-xl shadow-sm'}`}
-        >
-          <Code2 className={isDark ? 'text-emerald-400' : 'text-emerald-600'} size={32} />
-          <div>
-            <h3 className="text-xl font-heading font-bold mt-4">Case Studies</h3>
-            <p className={`text-sm mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>View my latest AI projects</p>
-          </div>
-        </motion.div>
-
-        {/* Medium Bento */}
-        <motion.div 
-          variants={item}
-          onClick={() => onNavigate('onboarding')}
-          className={`md:col-span-3 group cursor-pointer rounded-3xl p-8 relative overflow-hidden border transition-all hover:scale-[1.02] flex flex-col sm:flex-row sm:items-center justify-between gap-6 ${isDark ? 'bg-gradient-to-r from-[#101012] to-blue-900/20 border-white/10' : 'bg-gradient-to-r from-white to-blue-50 border-gray-200 hover:shadow-xl shadow-sm'}`}
-        >
-          <div>
-            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mb-3 ${isDark ? 'bg-white/10 text-white' : 'bg-blue-100 text-blue-700'}`}>
-              Available for hire
-            </div>
-            <h3 className="text-2xl font-heading font-bold">Start a Project</h3>
-            <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>Fill out my client questionnaire to get a custom quote.</p>
-          </div>
-          <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center shrink-0 text-white group-hover:scale-110 transition-transform shadow-lg">
-            <ArrowRight />
-          </div>
-        </motion.div>
-      </motion.div>
-
+      <style>{`
+        .glitch-text {
+          position: relative;
+        }
+        .glitch-text::before,
+        .glitch-text::after {
+          content: attr(data-text);
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          opacity: 0.8;
+        }
+        .glitch-text::before {
+          color: ${colors.secondary};
+          z-index: -1;
+          clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+          animation: glitch-anim-1 2.5s infinite linear alternate-reverse;
+        }
+        .glitch-text::after {
+          color: ${colors.primary};
+          z-index: -2;
+          clip-path: polygon(0 60%, 100% 60%, 100% 100%, 0 100%);
+          animation: glitch-anim-2 2s infinite linear alternate-reverse;
+        }
+        @keyframes glitch-anim-1 {
+          0% { transform: translate(0) }
+          20% { transform: translate(-2px, 2px) }
+          40% { transform: translate(-2px, -2px) }
+          60% { transform: translate(2px, 2px) }
+          80% { transform: translate(2px, -2px) }
+          100% { transform: translate(0) }
+        }
+        @keyframes glitch-anim-2 {
+          0% { transform: translate(0) }
+          20% { transform: translate(2px, -2px) }
+          40% { transform: translate(2px, 2px) }
+          60% { transform: translate(-2px, -2px) }
+          80% { transform: translate(-2px, 2px) }
+          100% { transform: translate(0) }
+        }
+      `}</style>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import Shell from './components/Layout/Shell';
 import HomeModule from './components/Modules/HomeModule';
 import DossierModule from './components/Modules/DossierModule';
@@ -34,7 +34,7 @@ const App = () => {
 
   const [activeModule, setActiveModule] = useState(getInitialModule);
   const [cmdOpen, setCmdOpen] = useState(false);
-  const { unlockAchievement, setOverclocked } = useSystem();
+  const { unlockAchievement, setOverclocked, overclocked } = useSystem();
 
   // SEO: Sync URL and Document Title when activeModule changes
   useEffect(() => {
