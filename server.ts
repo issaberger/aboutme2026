@@ -3,8 +3,6 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({}); // will pick up process.env.GEMINI_API_KEY automatically
-
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -14,6 +12,12 @@ async function startServer() {
   // AI Chat Route
   app.post("/api/chat", async (req, res) => {
     try {
+      if (!process.env.GEMINI_API_KEY) {
+        return res.status(500).json({ error: "GEMINI_API_KEY is not configured in the environment." });
+      }
+
+      const ai = new GoogleGenAI({});
+      
       const { message, history } = req.body;
       
       const systemInstruction = `You are the official AI Assistant for Issa Berger.

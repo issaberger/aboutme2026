@@ -48,7 +48,11 @@ const AICopilot = () => {
 
       const data = await response.json();
       
-      setMessages(prev => [...prev, { role: 'ai', text: data.reply || "I'm having trouble connecting right now." }]);
+      if (!response.ok) {
+        setMessages(prev => [...prev, { role: 'ai', text: data.error || "I'm having trouble connecting right now." }]);
+      } else {
+        setMessages(prev => [...prev, { role: 'ai', text: data.reply || "I'm having trouble connecting right now." }]);
+      }
     } catch (error) {
       setMessages(prev => [...prev, { role: 'ai', text: "Systems are currently experiencing interference." }]);
     } finally {
